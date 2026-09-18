@@ -181,7 +181,7 @@ Barista:
 - Tidak ada batas maksimum jumlah pesanan yang dapat berstatus SEDANG DIBUAT.
 
 FIFO tetap digunakan sebagai prioritas antrean.
-4. Admin/Owner
+## 4. Admin/Owner
 
 Sistem harus memungkinkan Admin/Owner untuk:
 
