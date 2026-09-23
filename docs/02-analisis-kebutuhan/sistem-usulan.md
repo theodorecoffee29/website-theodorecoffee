@@ -2,45 +2,65 @@
 
 ## 1. Gambaran Umum Sistem Usulan
 
-Sistem usulan merupakan rancangan sistem informasi berbasis website yang dikembangkan untuk mengatasi seluruh kelemahan dan keterbatasan yang teridentifikasi pada sistem manual (sistem berjalan) Theodore Coffee. 
+Sistem usulan merupakan rancangan sistem informasi berbasis website yang dikembangkan untuk mengatasi kelemahan dan keterbatasan yang teridentifikasi pada sistem berjalan Theodore Coffee.
 
-Sistem ini dirancang khusus untuk operasional **Theodore Coffee V1**, yaitu usaha booth minuman santri pada pameran dan kegiatan sekolah di lingkungan pesantren, dengan arsitektur modern yang siap diskalakan ketika usaha berkembang menjadi café yang lebih besar.
+Sistem ini dirancang khusus untuk operasional **Theodore Coffee V1**, yaitu usaha booth minuman santri pada pameran dan kegiatan sekolah di lingkungan pesantren, dengan arsitektur modern yang dapat dikembangkan ketika usaha berkembang menjadi café yang lebih besar.
 
-Melalui sistem usulan ini, seluruh proses operasional—mulai dari pemesanan menu, verifikasi pembayaran, antrean produksi barista, pemotongan stok bahan baku berdasarkan resep, hingga rekapitulasi laporan omzet—diintegrasikan ke dalam satu platform berbasis web (*Next.js + Supabase + Midtrans*) yang responsif, terstruktur, dan berjalan secara realtime tanpa memerlukan refresh halaman.
+Melalui sistem usulan ini, proses operasional mulai dari pemesanan menu, verifikasi pembayaran, antrean produksi barista, pengelolaan stok bahan baku berdasarkan resep, hingga rekapitulasi transaksi dan laporan diintegrasikan ke dalam satu platform berbasis web menggunakan **Next.js + Supabase + Midtrans**.
+
+Sistem dirancang responsif dan mendukung pembaruan status secara realtime tanpa memerlukan refresh halaman secara manual.
 
 ---
 
 ## 2. Pilar Solusi Utama Sistem Usulan
 
-Sistem usulan menghadirkan lima pilar solusi utama yang secara langsung menjawab permasalahan operasional booth:
+Sistem usulan menghadirkan lima pilar solusi utama yang secara langsung menjawab permasalahan operasional booth.
 
 ### 2.1 Digitalisasi Pemesanan (*Dual-Channel Ordering*)
+
 Sistem mendukung dua jalur pemesanan yang terintegrasi:
-* **Pemesanan Online (Mandiri oleh Pelanggan):** Pelanggan cukup memindai QR Code di area pameran menggunakan smartphone tanpa perlu membuat akun atau login. Pelanggan mengisi nama pemesan (*Atas Nama*), memilih menu dan kustomisasi rasa (gula, es, metode seduh, add-on), meninjau keranjang, dan melakukan konfirmasi pesanan terkunci. Pelanggan mendapatkan kode pesanan unik yang sulit ditebak (misalnya: `TC-001`) untuk memantau status pesanannya.
-* **Pemesanan Offline (Langsung di Booth):** Pelanggan yang datang ke booth langsung dilayani oleh Kasir melalui antarmuka kasir digital yang cepat dan terstruktur.
-* **Keuntungan:** Mengurangi antrean fisik di depan booth pameran, memberikan kenyamanan kepada pelanggan, dan menghilangkan ketergantungan pada nota kertas fisik.
+
+- **Pemesanan Online (Mandiri oleh Pelanggan):** Pelanggan cukup memindai QR Code di area pameran menggunakan smartphone tanpa perlu membuat akun atau login. Pelanggan mengisi nama pemesan (*Atas Nama*), memilih menu dan kustomisasi seperti tingkat gula, tingkat es, metode seduh, add-on, serta catatan tambahan. Setelah meninjau keranjang, pelanggan melakukan konfirmasi pesanan. Setelah dikonfirmasi, pesanan tidak dapat diedit oleh pelanggan melalui alur normal. Pelanggan mendapatkan kode pesanan unik yang sulit ditebak untuk memantau status pesanannya.
+
+- **Pemesanan Offline (Langsung di Booth):** Pelanggan yang datang langsung ke booth dilayani oleh Kasir melalui antarmuka kasir digital yang terstruktur. Kasir memasukkan nama pelanggan, menu, jumlah, kustomisasi, dan catatan pesanan ke dalam sistem.
+
+- **Keuntungan:** Digitalisasi pemesanan membantu mengurangi antrean fisik, memberikan informasi pesanan yang lebih terstruktur, serta mengurangi ketergantungan pada pencatatan menggunakan nota kertas.
 
 ### 2.2 Sistem Pembayaran Fleksibel dan Terverifikasi
-* **QRIS Digital Otomatis (Midtrans):** Pemesanan online dilayani menggunakan QRIS dinamis. Sistem memverifikasi status pembayaran secara otomatis melalui *webhook* Midtrans tanpa memerlukan tombol konfirmasi manual ("Saya Sudah Bayar") dari pelanggan.
-* **Pembayaran Tunai (Cash):** Pemesanan langsung di booth mendukung pembayaran tunai yang diverifikasi langsung oleh Kasir.
-* **Keuntungan:** Meminimalisir risiko salah hitung uang kembalian, mempercepat transaksi, serta mencatat mutasi uang masuk secara terstruktur antara kas fisik dan saldo digital.
+
+Sistem mendukung dua metode pembayaran pada V1, yaitu **Cash dan QRIS melalui Midtrans**.
+
+- **QRIS melalui Midtrans:** Pesanan online yang telah diterima oleh Kasir dapat dilanjutkan ke tahap pembayaran QRIS melalui Midtrans. Status pembayaran diverifikasi berdasarkan informasi pembayaran dari Midtrans melalui mekanisme notifikasi/webhook. Pelanggan tidak memerlukan tombol konfirmasi manual seperti "Saya Sudah Bayar".
+
+- **Pembayaran Tunai (*Cash*):** Pembayaran tunai dilakukan langsung melalui Kasir dan diverifikasi oleh Kasir sebelum pesanan dapat masuk ke proses produksi.
+
+- **Keuntungan:** Sistem membantu mengurangi risiko kesalahan perhitungan pembayaran dan kembalian serta mencatat transaksi tunai dan QRIS secara lebih terstruktur sehingga memudahkan proses rekonsiliasi.
 
 ### 2.3 Manajemen Antrean Produksi Terpusat (*FIFO & Kitchen Display*)
-* **Satu Pintu Melalui Kasir:** Seluruh pesanan online harus divalidasi dan diterima oleh Kasir terlebih dahulu sebelum masuk ke antrean produksi Barista. Tidak ada alur langsung dari website ke Barista tanpa pemeriksaan kasir.
-* **Antrean Berbasis Prioritas FIFO (*First In, First Out*):** Sistem menggunakan prinsip FIFO sebagai prioritas urutan mulai produksi. Namun, Barista dapat mengerjakan beberapa pesanan secara bersamaan (*multiple production*) dan sistem tidak membatasi jumlah maksimum pesanan yang berstatus `SEDANG DIBUAT`.
-* **Layar Dapur Digital (Kitchen Display):** Barista menerima tiket pesanan digital lengkap dengan rincian kustomisasi yang jelas dan seragam. Barista memperbarui status melalui tombol `BUAT PESANAN` (*SEDANG DIBUAT*) hingga `PESANAN SELESAI` (*SELESAI*).
-* **Penguncian Pesanan (*Order Locking*):** Begitu Barista menekan tombol `BUAT PESANAN` dan status berubah menjadi `SEDANG DIBUAT`, pesanan dikunci total dan tidak dapat diedit atau dibatalkan melalui alur normal.
+
+- **Satu Pintu Melalui Kasir:** Seluruh pesanan online harus diperiksa dan diterima oleh Kasir terlebih dahulu sebelum dapat masuk ke proses pembayaran dan produksi. Tidak terdapat alur langsung dari website atau pelanggan menuju Barista tanpa melalui Kasir.
+
+- **Antrean Berbasis Prioritas FIFO (*First In, First Out*):** Sistem menggunakan prinsip FIFO sebagai prioritas urutan untuk memulai produksi. Namun, Barista dapat mengerjakan beberapa pesanan secara bersamaan (*multiple production*) dan sistem tidak membatasi jumlah maksimum pesanan yang berstatus `SEDANG DIBUAT`.
+
+- **Layar Dapur Digital (*Kitchen Display*):** Barista menerima tiket pesanan digital yang berisi kode pesanan, nama pelanggan, produk, jumlah, kustomisasi, dan catatan. Barista memperbarui status melalui tombol `BUAT PESANAN` hingga `PESANAN SELESAI`.
+
+- **Penguncian Pesanan (*Order Locking*):** Ketika Barista menekan tombol `BUAT PESANAN` dan status berubah menjadi `SEDANG DIBUAT`, pesanan dikunci. Pesanan tidak dapat diedit atau dibatalkan melalui alur normal setelah proses produksi dimulai.
 
 ### 2.4 Otomatisasi Stok Bahan Baku Berbasis Resep (*Bill of Materials*)
-* **Pemotongan Stok Otomatis:** Setiap menu dikaitkan dengan resep bahan baku (contoh: gramasi kopi, mililiter susu, gram gula). Ketika transaksi berhasil, stok bahan baku otomatis terpotong secara atomik di database.
-* **Pencegahan Pesanan Kosong (*Out-of-Stock Prevention*):** Jika stok salah satu bahan tidak mencukupi kebutuhan resep, sistem secara otomatis menandai produk "Tidak Tersedia" dan menolak pemesanan di tingkat server.
-* **Peringatan Stok Menipis (*Low-Stock Alerts*):** Admin/Owner mendapatkan notifikasi dini saat stok bahan menyentuh batas minimum agar dapat segera melakukan pengadaan kembali (*restock*).
+
+- **Pemotongan Stok Otomatis:** Setiap menu dikaitkan dengan resep bahan baku yang menentukan kebutuhan bahan untuk satu porsi. Ketika transaksi telah berhasil dan pesanan memenuhi syarat untuk masuk ke proses produksi, sistem melakukan pemotongan stok bahan baku secara atomik berdasarkan resep.
+
+- **Pencegahan Pesanan dengan Stok Tidak Mencukupi (*Out-of-Stock Prevention*):** Jika stok salah satu bahan tidak mencukupi kebutuhan resep, sistem menandai produk sebagai tidak tersedia dan melakukan validasi kembali pada sisi server sehingga pesanan tidak dapat diproses menggunakan stok yang tidak mencukupi.
+
+- **Peringatan Stok Menipis (*Low-Stock Alerts*):** Admin/Owner mendapatkan informasi atau notifikasi ketika stok bahan mencapai atau berada di bawah batas minimum sehingga dapat dilakukan pengadaan kembali (*restock*).
 
 ### 2.5 Laporan Realtime, Struk PDF, dan Audit Log
-* **Dashboard Analitik Owner:** Menampilkan omzet harian, jumlah transaksi, rincian pembayaran tunai vs QRIS, dan produk terlaris secara langsung.
-* **Struk PDF & Ekspor Laporan:** Kasir dan Admin/Owner dapat membuat dan mencetak ulang Struk PDF dengan format standar. Laporan penjualan dan stok dapat diekspor ke format PDF dan Excel (.xlsx).
-* **Audit Log Terlindungi:** Seluruh aktivitas penting (login, perubahan stok, pembatalan, verifikasi pembayaran) dicatat dalam audit log sistem dan tidak dapat diubah atau dihapus melalui aplikasi oleh pengguna biasa.
 
+- **Dashboard Analitik Owner:** Dashboard menampilkan informasi seperti omzet harian, jumlah transaksi, rincian pembayaran tunai dan QRIS, produk terlaris, stok menipis, serta pesanan yang sedang diproses.
+
+- **Struk PDF & Ekspor Laporan:** Kasir dan Admin/Owner dapat membuat serta mencetak ulang Struk PDF berdasarkan data transaksi. Laporan penjualan dan stok dapat diekspor ke format PDF dan Excel (`.xlsx`).
+
+- **Audit Log Terlindungi:** Aktivitas penting seperti login, perubahan stok, pembatalan pesanan, perubahan data transaksi, verifikasi pembayaran, refund, dan aktivitas penting lainnya dicatat dalam audit log. Data audit log dilindungi dari perubahan dan penghapusan melalui aplikasi.
 ---
 
 ## 3. Diagram Alur Sistem Usulan
