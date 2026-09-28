@@ -250,7 +250,6 @@ Barista dapat:
 15. Mengubah status menjadi `SEDANG DIBUAT`.
 16. Melihat pesanan yang sedang dikerjakan.
 17. Menekan tombol `PESANAN SELESAI`.
-18. Mengubah status pesanan menjadi `SIAP DIAMBIL`.
 19. Melihat riwayat pesanan yang telah selesai.
 
 Barista tidak dapat:
