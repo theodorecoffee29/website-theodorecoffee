@@ -9,7 +9,7 @@ Agar pengembangan sistem Theodore Coffee memiliki ruang lingkup yang jelas dan d
 5. Sistem versi awal belum mencakup layanan **delivery/pengantaran pesanan**.
 6. Pembayaran secara langsung direncanakan menggunakan **cash dan QRIS**.
 7. Pembayaran pada pemesanan melalui website menggunakan **QRIS**.
-8. Akun pelanggan menggunakan **username dan password** serta dibuat oleh Admin. Sistem tidak menggunakan email maupun nomor telepon sebagai identitas akun pelanggan.
+8. Akun pelanggan menggunakan **username** saja dan langsung memilih atau memesan pesanan
 9. Sistem menyediakan pengelolaan pesanan dengan nomor pesanan unik dan status pesanan.
 10. Sistem mendukung kustomisasi produk berupa tingkat gula, tingkat es, dan metode seduh.
 11. Sistem menyediakan pengelolaan stok bahan dan resep produk.
