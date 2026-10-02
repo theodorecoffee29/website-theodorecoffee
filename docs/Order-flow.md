@@ -1,0 +1,86 @@
+# Alur Order — Theodore Coffee V1
+
+Terkait: `prd.md`, `data-model.md`, `permissions.md`.
+
+## 1. Status order
+
+| Status (sistem) | Tampil ke customer | Artinya |
+|---|---|---|
+| `menunggu_konfirmasi` | Menunggu konfirmasi | Order tersimpan, belum dikonfirmasi Cashier. Belum terlihat Barista. |
+| `antrean` | Sedang dibuat | Sudah dikonfirmasi dan dibayar. Muncul di layar Barista sebagai order baru dengan tombol **Mulai**. |
+| `dikerjakan` | Sedang dibuat | Barista sudah menekan Mulai. Tombol berubah menjadi **Selesai**. |
+| `selesai` | Pesanan selesai | Barista menekan Pesanan selesai. Status akhir. |
+| `dibatalkan` | Dibatalkan | Dibatalkan sebelum konfirmasi. Status akhir. |
+
+## 2. Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> menunggu_konfirmasi: Order dibuat (customer atau Cashier)
+    menunggu_konfirmasi --> antrean: Cashier konfirmasi + pilih metode bayar
+    menunggu_konfirmasi --> dibatalkan: Customer / Cashier / Admin batalkan
+    antrean --> dikerjakan: Barista tekan Mulai
+    dikerjakan --> selesai: Barista tekan Selesai
+    selesai --> [*]
+    dibatalkan --> [*]
+```
+
+## 3. Perpindahan status
+
+| Dari | Ke | Aksi | Siapa | Efek |
+|---|---|---|---|---|
+| (baru) | menunggu_konfirmasi | Buat order | Customer (HP) atau Cashier (input manual) | Order tersimpan, dapat nomor antrean, notifikasi muncul di Cashier |
+| menunggu_konfirmasi | antrean | Konfirmasi + pilih metode bayar (QRIS/tunai) | Cashier (atau Admin) | Pembayaran dicatat, stok berkurang*, order muncul di layar Barista dengan tombol Mulai |
+| menunggu_konfirmasi | dibatalkan | Batalkan (customer lewat popup Ya/Tidak) | Customer, Cashier, Admin | Order tidak masuk antrean, tidak ada pembayaran dan stok yang tercatat |
+| antrean | dikerjakan | Mulai | Barista | Tombol berubah menjadi Selesai. Status di HP customer tetap Sedang dibuat |
+| dikerjakan | selesai | Selesai | Barista | Status customer online berubah menjadi Pesanan selesai, customer offline dipanggil langsung |
+
+Tidak ada perpindahan lain. Order `selesai` dan `dibatalkan` tidak bisa diubah lagi.
+
+\* Stok berkurang saat konfirmasi (bukan saat order dibuat), supaya pembatalan tidak perlu mengembalikan stok.
+
+## 4. Dua jalur masuk
+
+**Online:** customer scan QR booth → pesan dan isi nama → status Menunggu konfirmasi → bayar di booth → Cashier menerima notifikasi, cek bayar, Konfirmasi.
+
+**Kasir:** customer datang → Cashier input order → customer bayar → Cashier Konfirmasi di layar yang sama.
+
+Keduanya memakai alur dan antrean yang sama. Antrean Barista diurutkan berdasarkan waktu konfirmasi.
+
+## 5. Kasus tepi
+
+- **Batalkan dan Konfirmasi bersamaan:** server mengecek status terakhir saat aksi dijalankan. Yang masuk duluan menang, pihak lain mendapat pesan "status pesanan sudah berubah". Order yang batal tidak boleh punya pembayaran atau pengurangan stok.
+- **Klik ganda / kirim dua kali:** tidak boleh menghasilkan dua order atau dua pengurangan stok.
+- **Gagal menyimpan order:** customer melihat pesan error yang jelas dan bisa mencoba lagi. Error tercatat di log.
+- **Internet putus:** Cashier mencatat di kertas, lalu menginput belakangan dengan waktu manual (ditandai di order dan log).
+
+## 6. Acceptance criteria
+
+Alur dianggap selesai kalau semua poin ini lolos:
+
+1. Order tersimpan begitu dibuat dan mendapat nomor antrean, meski belum dibayar.
+2. Barista tidak melihat order berstatus `menunggu_konfirmasi` atau `dibatalkan`.
+3. Cashier tidak bisa mengonfirmasi tanpa memilih metode bayar.
+4. Setelah Konfirmasi, status di HP customer berubah menjadi Sedang dibuat tanpa refresh manual.
+5. Setelah Barista menekan Selesai, status di HP customer berubah menjadi Pesanan selesai.
+5a. Order yang baru dikonfirmasi muncul di layar Barista dengan tombol Mulai, dan tidak otomatis dianggap sedang dikerjakan.
+5b. Setelah Mulai ditekan, tombol berubah menjadi Selesai, dan status di HP customer tetap Sedang dibuat.
+5c. Selesai tidak bisa ditekan sebelum Mulai. Kalau dua Barista menekan Mulai pada order yang sama, satu yang menang dan yang lain mendapat pesan.
+6. Tombol Batalkan hanya muncul saat Menunggu konfirmasi dan hilang setelah konfirmasi.
+7. Popup batalkan: Tidak tidak mengubah apa pun, Ya membuat status Dibatalkan.
+8. Batalkan dan Konfirmasi bersamaan menghasilkan satu pemenang, dan pihak lain mendapat pesan.
+9. Order `selesai` atau `dibatalkan` tidak bisa diubah oleh siapa pun.
+10. Antrean Barista berurut berdasarkan waktu konfirmasi.
+11. Setiap perubahan status tercatat di log aktivitas (siapa, kapan, dari status apa ke status apa).
+12. Kegagalan membuat atau mengonfirmasi order tercatat di log error dan tidak membuat data ganda.
+13. Order yang diinput belakangan memakai waktu manual dan ditandai.
+14. Menu yang bahannya tidak cukup untuk satu porsi tampil Habis dan tidak bisa dipesan.
+15. Konfirmasi saat stok kurang tetap berhasil, menampilkan peringatan ke Cashier, dan tercatat di log.
+16. Nomor antrean mulai dari 1 lagi tiap hari (WIB) dan tidak ada nomor ganda dalam satu hari.
+
+## 7. Keputusan
+
+1. **Stok berkurang saat konfirmasi.** Order yang dibatalkan tidak pernah menyentuh stok.
+2. **Stok tidak cukup:** menu otomatis tampil **Habis** (tidak bisa dipesan) kalau bahan tidak cukup untuk satu porsi. Saat konfirmasi, kekurangan stok hanya **peringatan** ke Cashier, tidak diblokir, karena customer sudah membayar dan stok di sistem bisa selisih dengan stok fisik (takaran, tumpah). Stok boleh menjadi minus dan tercatat di log, supaya Admin bisa mengoreksinya.
+3. **Admin boleh mengonfirmasi order** sebagai cadangan kalau Cashier berhalangan atau laptopnya bermasalah. Tercatat di log sebagai aksi Admin.
+4. **Nomor antrean mulai dari 1 lagi tiap hari** (WIB), sejalan dengan laporan harian. Identitas order di database tetap unik (ID internal), dan nomor antrean + tanggal dipakai sebagai referensi di layar.
