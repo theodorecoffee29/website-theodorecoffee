@@ -29,28 +29,33 @@ Semua halaman responsif (tidak ada versi khusus per perangkat).
 
 ## 4. Fitur V1
 
-**Customer**
-- Lihat menu, pilih item dan jumlah
-- Catatan per item
-- Lihat status pesanan dan nomor antrean
-- Tombol Batalkan pesanan (hanya saat Menunggu konfirmasi), dengan popup konfirmasi Ya/Tidak
+**Customer** (HP, tanpa login)
+1. Lihat menu (menu tampil **Habis** kalau bahan tidak cukup untuk satu porsi)
+2. Pilih item dan jumlah, plus catatan per item
+3. Isi nama, kirim pesanan, dapat nomor antrean
+4. Lihat status: Menunggu konfirmasi → Sedang dibuat → Pesanan selesai
+5. Batalkan pesanan (hanya sebelum konfirmasi, dengan popup Ya/Tidak)
 
-**Cashier**
-- Input order manual untuk customer yang datang ke kasir
-- Notifikasi pesanan online baru, lalu Konfirmasi (sambil memilih metode bayar)
-- Catat pembayaran offline
-- Batalkan order (sebelum konfirmasi)
+**Cashier** (laptop)
+6. Notifikasi pesanan online baru
+7. Konfirmasi order + pilih metode bayar (QRIS atau tunai), sekaligus pencatatan pembayaran offline
+8. Input order manual untuk customer yang datang ke kasir (bisa dengan waktu manual untuk cadangan kertas)
+9. Batalkan order (sebelum konfirmasi)
 
-**Barista**
-- Layar antrean berurutan
-- Tombol Pesanan selesai
+**Barista** (laptop)
+10. Antrean berurutan berdasarkan waktu konfirmasi
+11. Tombol **Mulai**, lalu **Selesai**, di tiap order
 
-**Admin**
-- Kelola menu dan resep
-- Stok bahan baku (gram/ml), berkurang otomatis sesuai resep
-- Laporan penjualan dan Riwayat laporan (cetak PDF/struk)
-- Kelola akun Cashier/Barista
-- Log aktivitas dan log error
+**Admin/Owner** (fleksibel)
+12. Kelola menu dan resep
+13. Stok bahan baku (gram/ml), berkurang otomatis saat konfirmasi
+14. Konfirmasi atau batalkan order sebagai cadangan Cashier
+15. Laporan hari ini (live): total penjualan, rincian per asal order dan metode bayar, menu terlaris, pemakaian bahan dan sisa stok
+16. Riwayat laporan (tersimpan otomatis tiap pergantian hari) + cetak PDF/struk
+17. Kelola akun Cashier dan Barista
+18. Log aktivitas dan log error
+
+**Otomatis oleh sistem:** menyimpan setiap order, nomor antrean yang mulai dari 1 tiap hari, pengurangan stok, penyimpanan laporan ke Riwayat, dan pencatatan semua aktivitas dan error.
 
 ## 5. Di luar V1
 
@@ -62,10 +67,10 @@ Status yang dilihat customer: **Menunggu konfirmasi → Sedang dibuat → Pesana
 
 1. Order dibuat (online oleh customer, atau diinput Cashier). Order langsung tersimpan.
 2. Customer membayar di booth.
-3. Cashier mengonfirmasi dan memilih metode bayar. Order masuk antrean Barista.
-4. Barista menekan Pesanan selesai. Customer online melihat statusnya berubah, customer offline dipanggil langsung.
+3. Cashier mengonfirmasi dan memilih metode bayar. Order muncul di layar Barista sebagai order baru.
+4. Barista menekan Mulai, lalu Selesai setelah pesanan jadi. Customer online melihat statusnya berubah menjadi Pesanan selesai, customer offline dipanggil langsung.
 
-Aturan: order masuk antrean Barista hanya setelah dikonfirmasi Cashier. Pembatalan hanya sebelum konfirmasi (oleh customer, Cashier, atau Admin). Detail status dan kasus tepi ada di `order-flow.md`.
+Aturan: order muncul di layar Barista hanya setelah dikonfirmasi Cashier (atau Admin). Pembatalan hanya sebelum konfirmasi (oleh customer, Cashier, atau Admin). Detail status dan kasus tepi ada di `order-flow.md`.
 
 ## 7. Pembayaran
 
