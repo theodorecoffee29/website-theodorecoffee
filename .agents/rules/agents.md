@@ -62,6 +62,33 @@ docs/               dokumentasi
 
 TypeScript ketat (tanpa `any` kecuali dijelaskan). Nama file kebab-case, komponen PascalCase. Format dan aturan ditegakkan lewat ESLint + Prettier, jadi jalankan `npm run lint` dan `npm run format`, jangan berdebat soal gaya.
 
+## Mode pemula (wajib diikuti)
+
+Pengguna masih pemula dan belajar dari nol lewat proyek ini. Prioritas: **kode sederhana, mudah dibaca, dan mudah dilacak kalau error.**
+
+**Komentar (bahasa Indonesia):**
+- Setiap file diawali komentar singkat: file ini untuk apa dan dipakai di mana.
+- Setiap fungsi punya komentar: tugasnya, input, output, dan **kenapa** dibuat begitu kalau tidak jelas.
+- Istilah atau konsep baru dijelaskan sekali dengan bahasa sederhana (misal apa itu RLS, transaksi).
+- Jangan menulis komentar yang cuma mengulang isi kode.
+
+**Gaya kode:**
+- Sederhana dan eksplisit: nama variabel dan fungsi panjang dan jelas, satu fungsi satu tugas, hindari trik atau abstraksi rumit.
+- Jangan menambah library baru tanpa alasan dan izin.
+
+**Penanganan error (supaya mudah dicari):**
+- Setiap operasi yang bisa gagal (database, jaringan, input pengguna) ditangani, tidak boleh dibiarkan atau ditelan diam-diam.
+- Pesan error menyebut **di mana** (nama file/fungsi) dan **apa** yang gagal, lalu dicatat lewat helper log.
+- Pengguna melihat pesan ramah. Detail teknis hanya ada di log.
+- Kalau ada error, jelaskan penyebabnya dengan bahasa sederhana **sebelum** memperbaiki, dan perbaiki akar masalahnya, bukan menyembunyikan error.
+
+**Setelah tiap tugas, jelaskan:**
+1. File apa yang dibuat atau diubah dan fungsinya
+2. Cara mengecek manual: langkah yang dilakukan dan hasil yang diharapkan
+3. Apa yang perlu dipelajari dari tugas itu (satu atau dua poin)
+
+**Keamanan kerja:** berhenti dan tanya kalau ada pilihan penting. Jangan menjalankan perintah yang merusak data (hapus data, reset database) tanpa izin.
+
 ## Cara kerja
 
 - **Satu tugas kecil per sesi.** Jangan membangun satu fase sekaligus.
