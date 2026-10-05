@@ -77,6 +77,7 @@ Alur dianggap selesai kalau semua poin ini lolos:
 14. Menu yang bahannya tidak cukup untuk satu porsi tampil Habis dan tidak bisa dipesan.
 15. Konfirmasi saat stok kurang tetap berhasil, menampilkan peringatan ke Cashier, dan tercatat di log.
 16. Nomor antrean mulai dari 1 lagi tiap hari (WIB) dan tidak ada nomor ganda dalam satu hari.
+17. Beberapa Cashier atau Barista boleh aktif bersamaan (akun berbeda, atau satu akun di dua laptop). Antrean dan status tersinkron di semua layar tanpa refresh manual. Dua Cashier yang menekan Konfirmasi pada order yang sama menghasilkan satu pemenang dan satu pembayaran, sedangkan yang kalah mendapat pesan "status pesanan sudah berubah".
 
 ## 7. Keputusan
 

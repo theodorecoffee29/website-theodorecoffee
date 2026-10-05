@@ -124,7 +124,7 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 | action | misal `order.created`, `order.confirmed`, `order.cancelled`, `menu.updated`, `stock.adjusted`, `report.saved`, `auth.login` |
 | entity_type, entity_id | objek yang berubah |
 | before, after | jsonb nilai sebelum/sesudah |
-| meta | konteks tambahan (misal waktu manual) |
+| meta | konteks tambahan (misal waktu manual, ID sesi/perangkat karena satu akun bisa login di beberapa laptop) |
 
 ### error_logs
 | Field | Keterangan |
