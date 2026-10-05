@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Kopi — Hi Fathur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7EFC7;
+    --cream-card: #F8F1CE;
+    --orange:#F4711E;
+    --orange-dark:#E0630F;
+    --ink:#141110;
+    --ink-soft:#2A2420;
+    --line: rgba(20,17,16,0.85);
+    --radius-lg: 26px;
+    --radius-md: 18px;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Poppins', sans-serif;
+  }
+
+  body{
+    padding:28px;
+  }
+
+  .layout{
+    width:100%;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:110px 1fr;
+    gap:24px;
+    align-items:start;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:var(--orange);
+    border:3px solid var(--ink);
+    border-radius:50px;
+    min-height:calc(100vh - 56px);
+    position:sticky;
+    top:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:14px;
+  }
+
+  .logo-badge{
+    position:relative;
+    top:0px;
+    width:78px;
+    height:78px;
+    border-radius:50%;
+    background:var(--ink);
+    border:3px solid var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+
+  .logo-badge img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .logo-placeholder{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--cream);
+    font-size:10px;
+    font-weight:600;
+    text-align:center;
+    line-height:1.2;
+    padding:4px;
+  }
+
+  /* ---------- GENERIC CARD ---------- */
+  .card{
+    background:var(--orange);
+    border:3px solid var(--ink);
+    border-radius:var(--radius-lg);
+    padding:28px 32px;
+  }
+
+  .card-title{
+    font-weight:800;
+    font-size:22px;
+    color:var(--cream);
+    letter-spacing:0.2px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    position:relative;
+    overflow:visible;
+  }
+
+  .hero-text h1{
+    font-weight:900;
+    font-size:100px;
+    line-height:1;
+    color:var(--cream);
+    letter-spacing:-1px;
+  }
+
+  .hero-text p{
+    margin-top:14px;
+    font-weight:700;
+    font-size:50px;
+    color:var(--ink);
+  }
+
+  .mascot-slot{
+    width:400px;
+    height:400px;
+    flex-shrink:0;
+    position:relative;
+    top:0px;
+    z-index:5;
+  }
+
+  .mascot-slot img,
+  .mascot-slot .mascot-placeholder{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:bottom;
+  }
+
+  .mascot-placeholder{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:12px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    background:rgba(255,255,255,0.12);
+    border:3px dashed var(--ink);
+    border-radius:20px;
+  }
+
+  /* ---------- STATS ROW ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
+  }
+
+  .stat-card{
+    padding:26px 28px;
+  }
+
+  .stat-label{
+    font-weight:700;
+    font-size:16px;
+    color:var(--ink);
+    padding-bottom:10px;
+    border-bottom:2.5px solid var(--ink);
+    display:inline-block;
+  }
+
+  .stat-value{
+    font-weight:900;
+    font-size:34px;
+    color:var(--cream);
+    margin-top:14px;
+    letter-spacing:-0.5px;
+  }
+
+  .stat-sub{
+    margin-top:8px;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- CHART ---------- */
+  .chart-card{
+    padding-bottom:20px;
+  }
+
+  .chart-wrap{
+    margin-top:26px;
+    display:flex;
+    gap:16px;
+  }
+
+  .y-axis{
+    display:flex;
+    flex-direction:column-reverse;
+    justify-content:space-between;
+    font-size:13px;
+    font-weight:700;
+    color:var(--cream);
+    padding-bottom:34px;
+    width:44px;
+    text-align:right;
+  }
+
+  .chart-plot{
+    flex:1;
+    position:relative;
+    height:380px;
+  }
+
+  .gridlines{
+    position:absolute;
+    inset:0;
+    bottom:34px;
+    display:flex;
+    flex-direction:column-reverse;
+    justify-content:space-between;
+  }
+
+  .gridlines div{
+    border-top:2px solid var(--ink);
+    opacity:0.9;
+    height:0;
+  }
+
+  .bars{
+    position:absolute;
+    inset:0;
+    bottom:34px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-around;
+    padding:0 6px;
+  }
+
+  .bar-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:13%;
+    height:100%;
+    justify-content:flex-end;
+  }
+
+  .bar{
+    width:58px;
+    border-radius:6px 6px 0 0;
+    border:3px solid var(--ink);
+    border-bottom:none;
+  }
+
+  .bar.light{ background:var(--cream); }
+  .bar.dark{ background:var(--ink); }
+
+  .x-axis{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:34px;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+  }
+
+  .x-axis span{
+    font-weight:800;
+    font-size:14px;
+    color:var(--cream);
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- TRANSACTIONS TABLE ---------- */
+  .table-head{
+    display:grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr;
+    gap:16px;
+    margin-top:26px;
+    padding-bottom:14px;
+    border-bottom:2.5px solid var(--ink);
+  }
+
+  .table-head span{
+    font-weight:800;
+    font-size:17px;
+    color:var(--cream);
+  }
+
+  .table-row{
+    display:grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr;
+    gap:16px;
+    padding:20px 0;
+    border-bottom:2px solid var(--ink);
+    min-height:20px;
+  }
+
+  .table-row:last-child{ border-bottom:none; }
+
+  /* ---------- BOTTOM GRID ---------- */
+  .bottom-grid{
+    display:grid;
+    grid-template-columns: 1.7fr 1fr;
+    gap:24px;
+  }
+
+  .list-card{
+    padding:30px 34px 34px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .list-lines{
+    margin-top:22px;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+
+  .list-lines div{
+    border-bottom:2px solid var(--ink);
+    height:0;
+  }
+
+  .stack{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+  }
+
+  @media (max-width:900px){
+    body{ padding:16px; }
+
+    .layout{
+      grid-template-columns:1fr;
+      gap:16px;
+    }
+
+    /* navbar becomes a horizontal bar on top for mobile */
+    .sidebar{
+      order:-1;
+      flex-direction:row;
+      justify-content:flex-start;
+      align-items:center;
+      min-height:auto;
+      height:74px;
+      width:100%;
+      border-radius:20px;
+      position:static;
+      padding:0 18px;
+    }
+
+    .logo-badge{
+      top:0;
+      width:52px;
+      height:52px;
+    }
+
+    .stats{ grid-template-columns:1fr; gap:16px; }
+    .bottom-grid{ grid-template-columns:1fr; gap:16px; }
+
+    .hero{ flex-direction:column; text-align:center; padding:24px 22px; }
+    .hero-text h1{ font-size:38px; }
+    .hero-text p{ font-size:16px; }
+    .mascot-slot{ width:170px; height:170px; top:-32px; }
+
+    .card{ padding:22px 20px; border-radius:20px; }
+    .card-title{ font-size:18px; }
+
+    .stat-value{ font-size:28px; }
+
+    .chart-plot{ height:280px; }
+    .bar{ width:34px; }
+    .x-axis span{ font-size:11px; }
+    .y-axis{ font-size:11px; width:34px; }
+
+    .table-head, .table-row{
+      grid-template-columns: repeat(2, 1fr);
+      row-gap:8px;
+    }
+  }
+
+  @media (max-width:520px){
+    .table-head span:nth-child(n+4),
+    .table-row > *:nth-child(n+4){ display:none; }
+    .bar{ width:24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-badge">
+      <!-- Ganti src di bawah dengan file logo kamu, mis. "logo.png" -->
+      <img src="logo.png" alt="Logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-placeholder',innerText:'LOGO'}))">
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="stack">
+
+    <!-- HERO -->
+    <section class="card hero">
+      <div class="hero-text">
+        <h1>Hi Fathur</h1>
+        <p>Have you drinked Coffee yet?</p>
+      </div>
+      <div class="mascot-slot">
+        <!-- Ganti src di bawah dengan file maskot kamu, mis. "mascot.png" -->
+        <img src="fix.png" alt="Maskot"
+             onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'mascot-placeholder',innerText:'Taruh gambar maskot di sini (mascot.png)'}))">
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="card stat-card">
+        <span class="stat-label">Total penjualan hari ini</span>
+        <div class="stat-value">Rp100.000</div>
+        <div class="stat-sub">4 transaksi</div>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Produk terjual</span>
+        <div class="stat-value">Rp100.000</div>
+        <div class="stat-sub">sejak pukol 08.30</div>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Total keuntungan hari ini</span>
+        <div class="stat-value">Rp50.000</div>
+        <div class="stat-sub">untuk hari ini</div>
+      </div>
+    </section>
+
+    <!-- CHART -->
+    <section class="card chart-card">
+      <span class="card-title">Grafik penjualan</span>
+      <div class="chart-wrap">
+        <div class="y-axis">
+          <span>0K</span>
+          <span>50K</span>
+          <span>100K</span>
+          <span>150K</span>
+          <span>200K</span>
+          <span>250K</span>
+        </div>
+        <div class="chart-plot">
+          <div class="gridlines">
+            <div></div><div></div><div></div><div></div><div></div><div></div>
+          </div>
+          <div class="bars">
+            <div class="bar-col"><div class="bar light" style="height:65%"></div></div>
+            <div class="bar-col"><div class="bar dark"  style="height:97%"></div></div>
+            <div class="bar-col"><div class="bar light" style="height:66%"></div></div>
+            <div class="bar-col"><div class="bar dark"  style="height:100%"></div></div>
+            <div class="bar-col"><div class="bar light" style="height:82%"></div></div>
+            <div class="bar-col"><div class="bar dark"  style="height:58%"></div></div>
+            <div class="bar-col"><div class="bar light" style="height:93%"></div></div>
+          </div>
+          <div class="x-axis">
+            <span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span>SAB</span><span>MIN</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="card">
+      <span class="card-title">Transaksi hari ini</span>
+      <div class="table-head">
+        <span>Invoice</span>
+        <span>Kasir</span>
+        <span>item</span>
+        <span>Total</span>
+        <span>Waktu</span>
+      </div>
+      <div class="table-row"></div>
+      <div class="table-row"></div>
+      <div class="table-row"></div>
+      <div class="table-row"></div>
+    </section>
+
+    <!-- BOTTOM -->
+    <section class="bottom-grid">
+      <div class="card list-card">
+        <span class="card-title">Informasi stok</span>
+        <div class="list-lines">
+          <div></div><div></div><div></div><div></div><div></div><div></div>
+        </div>
+      </div>
+      <div class="card list-card">
+        <span class="card-title">Terlaris</span>
+        <div class="list-lines">
+          <div></div><div></div><div></div><div></div><div></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
