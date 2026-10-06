@@ -9,7 +9,7 @@ Terkait: `prd.md`, `data-model.md`, `permissions.md`.
 | `menunggu_konfirmasi` | Menunggu konfirmasi | Order tersimpan, belum dikonfirmasi Cashier. Belum terlihat Barista. |
 | `antrean` | Sedang dibuat | Sudah dikonfirmasi dan dibayar. Muncul di layar Barista sebagai order baru dengan tombol **Mulai**. |
 | `dikerjakan` | Sedang dibuat | Barista sudah menekan Mulai. Tombol berubah menjadi **Selesai**. |
-| `selesai` | Pesanan selesai | Barista menekan Pesanan selesai. Status akhir. |
+| `selesai` | Pesanan selesai | Barista menekan Selesai. Status akhir. |
 | `dibatalkan` | Dibatalkan | Dibatalkan sebelum Barista menekan Mulai. Status akhir. |
 
 ## 2. Diagram

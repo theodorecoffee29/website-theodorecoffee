@@ -35,7 +35,7 @@ Dokumen ini mendefinisikan fungsi server: siapa yang boleh memanggil, input, out
 | Data | Aturan |
 |---|---|
 | Nama customer | Wajib, 1-50 karakter setelah spasi pinggir dipangkas |
-| Jumlah item per order | 1-20 baris item berbeda |
+| Jumlah baris item per order | 1-20 baris. Satu menu boleh muncul di lebih dari satu baris kalau catatannya berbeda (misalnya "less sugar" dan biasa). |
 | Jumlah per item (qty) | Bilangan bulat 1-99. Tidak ada batas bisnis yang ketat karena Cashier mengonfirmasi semua order. Angka 99 hanya batas teknis untuk mencegah data sampah. |
 | Catatan per item | Opsional, maksimal 100 karakter |
 | Menu | Harus ada, aktif, dan tidak Habis |

@@ -61,7 +61,7 @@ Semua tabel **menolak akses secara default**. Akses dibuka per kebutuhan:
 | Tabel | Siapa membaca | Siapa menulis |
 |---|---|---|
 | profiles | Pemilik akun (dirinya sendiri), Admin (semua) | Admin |
-| menu_items | Semua (hanya yang aktif), Admin (semua) | Admin |
+| menu_items | Cashier dan Barista (hanya yang aktif), Admin (semua). **Customer tidak membaca tabel**, menu diambil lewat fungsi server `get_menu`. | Admin |
 | ingredients, recipes | Admin | Admin (stok hanya lewat fungsi yang mencatat pergerakan) |
 | orders, order_items | Cashier dan Admin (semua). Barista lewat tampilan khusus tanpa harga, hanya status antrean dan dikerjakan. | Hanya lewat fungsi (create, confirm, cancel, start, finish) |
 | payments | Cashier, Admin | Hanya fungsi konfirmasi |

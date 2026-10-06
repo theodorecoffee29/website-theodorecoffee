@@ -5,7 +5,7 @@ File ini hanya pintu masuk. Detail ada di `docs/`, jangan disalin ulang di sini.
 
 ## Stack
 
-Next.js (App Router, TypeScript), Supabase (PostgreSQL + Auth, dikelola lewat **dashboard web**, bukan CLI), Vercel, Sentry. Package manager: **npm**.
+Next.js (App Router, TypeScript), Supabase (PostgreSQL + Auth, migrasi lewat **Supabase CLI** dengan `npx supabase`), Vercel, Sentry. Package manager: **npm**.
 
 ## Perintah
 
@@ -20,7 +20,12 @@ npm run test         # unit test
 
 Perintah di atas dibuat di Fase 1 (setup). Perbarui bagian ini kalau berubah.
 
-**Migrasi database (tanpa CLI):** tulis tiap perubahan sebagai file SQL bernomor di `supabase/migrations/` (`0001_init.sql`, `0002_...sql`), lalu dijalankan manual berurutan di Supabase Dashboard > SQL Editor. File di repo adalah catatan resmi perubahan database.
+**Migrasi database (Supabase CLI):** tiap perubahan database adalah satu file SQL di `supabase/migrations/`.
+- Pengguna membuat file kosong dengan `npx supabase migration new <nama>` (nama file otomatis diberi timestamp).
+- Kamu (AI) hanya **mengisi file itu** dengan SQL.
+- Pengguna yang menjalankannya: `npx supabase db push --dry-run` untuk melihat dulu, lalu `npx supabase db push`. Status migrasi dicek dengan `npx supabase migration list`.
+- Project yang tersambung (`link`) adalah project **development**, bukan production.
+- File di repo adalah catatan resmi perubahan database.
 
 ## Peta dokumen (baca hanya yang relevan untuk tugasmu)
 
@@ -47,7 +52,7 @@ Abaikan `docs/_archive/` (dokumen lama).
 7. **Semua aksi dan error dicatat** lewat helper log yang sama (`src/lib/log`). Jangan membuat cara log baru.
 8. **Layar Barista tanpa harga dan data pembayaran.**
 9. **Stok boleh minus.** Kekurangan stok saat konfirmasi hanya peringatan, bukan blokir.
-10. Uang adalah bilangan bulat rupiah. Waktu `timestamptz`, "hari" memakai WIB.
+10. Uang adalah bilangan bulat rupiah. Jumlah stok dan takaran memakai `numeric(12,3)`. Waktu `timestamptz`, "hari" memakai WIB.
 
 ## Struktur folder
 
@@ -56,7 +61,7 @@ src/app/            halaman (customer, status/[orderId], cashier, barista, admin
 src/components/     komponen UI
 src/lib/            klien Supabase, validasi (zod), helper log
 src/server/         logika sisi server
-supabase/migrations/  migrasi SQL (tabel, RLS, fungsi), dijalankan manual di dashboard
+supabase/migrations/  migrasi SQL (tabel, RLS, fungsi), dibuat dengan `npx supabase migration new`
 docs/               dokumentasi
 ```
 
@@ -111,6 +116,7 @@ Pengguna masih pemula dan belajar dari nol lewat proyek ini. Prioritas: **kode s
 
 - Menambah fitur di luar V1: akun customer, diskon/promo, multi-booth, pesan antar, notifikasi WhatsApp/suara, layar antrean umum, payment gateway, mode offline penuh
 - Mengubah keputusan di dokumen tanpa izin
+- **Menjalankan perintah yang mengubah database atau akun Supabase:** `supabase login`, `link`, `db push`, `db reset`, `migration repair`, atau sejenisnya. Tugasmu hanya menulis file migrasi. Pengguna yang menjalankannya.
 - Menambah dependency besar tanpa alasan
 
 ## Wajib dites

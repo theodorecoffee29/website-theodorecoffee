@@ -31,6 +31,7 @@ Semua uang disimpan sebagai **bilangan bulat rupiah**. Semua waktu memakai `time
 | name | nama tampilan |
 | role | `admin` / `cashier` / `barista` |
 | is_active | akun bisa dinonaktifkan |
+| created_at, updated_at | kapan akun dibuat dan terakhir diubah |
 
 Customer **tidak punya akun**.
 
@@ -62,6 +63,7 @@ Status **Habis** tidak disimpan, tapi dihitung: menu habis kalau ada bahan di re
 | Field | Keterangan |
 |---|---|
 | id | uuid (juga dipakai di link halaman status customer) |
+| idempotency_key | uuid dari klien, **unik**, mencegah order ganda saat klik ganda atau kirim ulang. Boleh kosong (untuk data seed atau data lama), dan database mengizinkan banyak baris kosong. |
 | queue_date, queue_number | tanggal (WIB) + nomor antrean, **unik per hari** |
 | customer_name | |
 | source | `online` / `cashier` (asal order) |
@@ -83,6 +85,8 @@ Status **Habis** tidak disimpan, tapi dihitung: menu habis kalau ada bahan di re
 | name_snapshot, price_snapshot | nama dan harga **saat dipesan**, supaya laporan lama tidak berubah kalau menu diedit |
 | qty, note | jumlah dan catatan ("less sugar") |
 | subtotal | price_snapshot × qty |
+
+Satu menu boleh muncul di lebih dari satu baris dalam satu order (misalnya catatan berbeda), jadi **tidak ada batasan unik** pada (`order_id`, `menu_item_id`). Batas 20 baris per order dicek di server.
 
 ### payments
 | Field | Keterangan |
@@ -111,6 +115,7 @@ Dibuat saat konfirmasi. Order yang dibatalkan sebelum konfirmasi tidak punya bar
 ### daily_reports (Riwayat)
 | Field | Keterangan |
 |---|---|
+| id | uuid (dipakai sebagai `entity_id` di log `report.saved`) |
 | report_date | unik, satu laporan per hari |
 | data | jsonb: total penjualan, rincian per asal order dan metode bayar, menu terlaris, pemakaian bahan, sisa stok, dan baris-baris order hari itu |
 | generated_at | |
@@ -121,9 +126,10 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 | Field | Keterangan |
 |---|---|
 | id, at | |
-| actor_id, actor_role | kosong kalau pelakunya customer atau sistem |
+| actor_id | profil pelaku, kosong kalau pelakunya customer atau sistem |
+| actor_role | selalu terisi: `admin` / `cashier` / `barista` / `customer` / `system` (enum terpisah dari `profiles.role`, yang hanya berisi tiga peran staf) |
 | action | misal `order.created`, `order.confirmed`, `order.cancelled`, `menu.updated`, `stock.adjusted`, `report.saved`, `auth.login` |
-| entity_type, entity_id | objek yang berubah |
+| entity_type, entity_id | objek yang berubah. `entity_type`: `order`, `payment`, `menu_item`, `recipe`, `ingredient`, `account`, `report`, `auth`. `entity_id` bertipe **uuid** dan boleh kosong (misalnya login gagal dengan akun yang tidak dikenal). |
 | before, after | jsonb nilai sebelum/sesudah |
 | meta | konteks tambahan (misal waktu manual, ID sesi/perangkat karena satu akun bisa login di beberapa laptop) |
 
@@ -135,7 +141,7 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 | source | `client` / `server` / `database` |
 | severity | `warning` / `error` / `critical` |
 | message, context | jsonb konteks (halaman, aksi, payload ringkas) |
-| user_id, order_id | kosong kalau tidak ada |
+| user_id, order_id | uuid biasa **tanpa foreign key**, supaya log tetap tertulis walau order belum ada atau gagal dibuat. Kosong kalau tidak ada. |
 | sentry_event_id | untuk dicocokkan dengan Sentry |
 
 ## 3. Aturan data
@@ -150,6 +156,8 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 8. **Menu Habis** dihitung dari stok dan resep, bukan disimpan.
 9. **Idempotensi:** pembuatan order memakai kunci unik dari klien, sehingga klik ganda atau kirim ulang tidak membuat order ganda.
 10. **Pembatalan order yang sudah dikonfirmasi** (status `antrean`) juga satu transaksi: update bersyarat `WHERE status = 'antrean'`, tandai pembayaran batal, kembalikan stok lewat `stock_movements`, ubah status, tulis log. Pembayaran yang batal tidak dihitung di laporan.
+11. **Jumlah stok dan takaran** (`stock_qty`, `qty_per_portion`, `qty_change`, `stock_after`) memakai `numeric(12,3)`, supaya takaran pecahan (misalnya 7,5 gram atau 0,25 pcs) tersimpan tanpa pembulatan. Uang tetap bilangan bulat rupiah.
+12. **`updated_at` diperbarui otomatis** oleh trigger database setiap baris diubah (berlaku untuk tabel yang punya kolom itu, seperti `profiles` dan `menu_items`), jadi tidak bergantung pada kode aplikasi.
 
 ## 4. Belum diputuskan
 
