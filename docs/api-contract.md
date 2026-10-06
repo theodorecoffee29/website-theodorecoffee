@@ -52,7 +52,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 | `get_menu` | Anonim, semua peran | Daftar menu aktif + status Habis |
 | `create_order` | Anonim (customer) | Buat order online |
 | `get_order_status` | Anonim (dengan ID order) | Status order sendiri |
-| `cancel_order` | Customer (order sendiri), Cashier, Admin | Batalkan sebelum konfirmasi |
+| `cancel_order` | Customer (order sendiri), Cashier, Admin | Batalkan (customer: sebelum konfirmasi, Cashier/Admin: sampai Barista menekan Mulai) |
 | `list_orders` | Cashier, Admin | Daftar order dengan status, pembayaran, dan notifikasi baru |
 | `confirm_order` | Cashier, Admin | Konfirmasi + metode bayar |
 | `create_manual_order` | Cashier, Admin | Input order manual (sekaligus dikonfirmasi) |
@@ -90,8 +90,8 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 ### cancel_order
 - **Input:** `{ orderId }`
 - **Output:** `{ status: "dibatalkan" }`
-- **Efek:** update bersyarat `WHERE status = 'menunggu_konfirmasi'`, `order.cancelled` dicatat dengan peran pembatal (customer, cashier, atau admin)
-- **Error:** `ORDER_NOT_FOUND`, `ORDER_STATUS_CHANGED` (sudah dikonfirmasi atau sudah dibatalkan), `FORBIDDEN`, `RATE_LIMITED`
+- **Efek:** update bersyarat. Customer hanya bisa membatalkan saat `menunggu_konfirmasi`. Cashier dan Admin bisa membatalkan saat `menunggu_konfirmasi` atau `antrean`. Kalau status `antrean`, dalam satu transaksi: pembayaran ditandai batal, stok dikembalikan, order keluar dari antrean Barista. Log: `order.cancelled` dengan peran pembatal, plus `payment.voided` dan `stock.restored` untuk order yang sudah dikonfirmasi
+- **Error:** `ORDER_NOT_FOUND`, `ORDER_STATUS_CHANGED` (customer: sudah dikonfirmasi atau dibatalkan, staf: sudah dikerjakan, selesai, atau dibatalkan), `FORBIDDEN`, `RATE_LIMITED`
 
 ### list_orders (Cashier, Admin)
 - **Input:** `{ statuses?: [...], date? }` (bawaan: order hari ini)
@@ -109,7 +109,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 ### create_manual_order (Cashier, Admin)
 - **Input:** `{ customerName, items, paymentMethod, occurredAt?, idempotencyKey }`
 - **Output:** sama dengan `confirm_order`, ditambah `orderId`
-- **Efek:** membuat order lalu langsung mengonfirmasinya dalam satu transaksi (`order.created` dan `order.confirmed` keduanya dicatat)
+- **Efek:** order langsung berstatus `antrean`, **tanpa tahap Menunggu konfirmasi**, dalam satu transaksi: order, pembayaran, pengurangan stok, dan log (`order.created` dan `order.confirmed` keduanya dicatat)
 - **Waktu manual (`occurredAt`):** hanya boleh di **hari berjalan (WIB)** dan tidak boleh di masa depan, karena laporan hari sebelumnya sudah terkunci di Riwayat. Order dengan waktu manual ditandai (`is_manual_time`).
 - **Error:** `VALIDATION_FAILED`, `MENU_UNAVAILABLE`, `FORBIDDEN`, `INTERNAL_ERROR`
 

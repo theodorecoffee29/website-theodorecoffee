@@ -40,7 +40,7 @@ Semua halaman responsif (tidak ada versi khusus per perangkat).
 6. Notifikasi pesanan online baru
 7. Konfirmasi order + pilih metode bayar (QRIS atau tunai), sekaligus pencatatan pembayaran offline
 8. Input order manual untuk customer yang datang ke kasir (bisa dengan waktu manual untuk cadangan kertas)
-9. Batalkan order (sebelum konfirmasi)
+9. Batalkan order (sampai Barista menekan Mulai; pembayaran dibatalkan dan stok dikembalikan otomatis)
 
 **Barista** (laptop)
 10. Antrean berurutan berdasarkan waktu konfirmasi
@@ -65,12 +65,14 @@ Akun/login customer (poin, riwayat), diskon/promo/voucher, lebih dari satu booth
 
 Status yang dilihat customer: **Menunggu konfirmasi → Sedang dibuat → Pesanan selesai** (atau **Dibatalkan**).
 
-1. Order dibuat (online oleh customer, atau diinput Cashier). Order langsung tersimpan.
+1. **Online:** customer membuat order. Order langsung tersimpan.
 2. Customer membayar di booth.
 3. Cashier mengonfirmasi dan memilih metode bayar. Order muncul di layar Barista sebagai order baru.
+
+   **Kasir:** order yang diinput Cashier tidak perlu konfirmasi terpisah. Setelah Cashier memilih metode bayar dan menekan Simpan, order langsung masuk antrean Barista.
 4. Barista menekan Mulai, lalu Selesai setelah pesanan jadi. Customer online melihat statusnya berubah menjadi Pesanan selesai, customer offline dipanggil langsung.
 
-Aturan: order muncul di layar Barista hanya setelah dikonfirmasi Cashier (atau Admin). Pembatalan hanya sebelum konfirmasi (oleh customer, Cashier, atau Admin). Detail status dan kasus tepi ada di `order-flow.md`.
+Aturan: order online muncul di layar Barista hanya setelah dikonfirmasi Cashier (atau Admin). Order yang diinput Cashier langsung masuk antrean. Pembatalan: customer hanya sebelum konfirmasi, sedangkan Cashier dan Admin sampai Barista menekan Mulai (pembayaran dibatalkan dan stok dikembalikan otomatis). Detail status dan kasus tepi ada di `order-flow.md`.
 
 ## 7. Pembayaran
 
@@ -82,6 +84,7 @@ Dua cara: **scan QRIS yang terpasang di booth**, atau **bayar langsung** (offlin
 - Tiap baris order punya dua label: **asal order** (online/Cashier) dan **metode bayar** (QRIS/langsung)
 - Laporan masuk otomatis ke **Riwayat** saat pergantian hari (WIB), lalu tidak berubah lagi
 - Riwayat bisa dibuka lagi dan dicetak sebagai PDF/struk
+- Order yang dibatalkan, termasuk yang dibatalkan setelah konfirmasi, tidak dihitung dalam total penjualan dan rincian metode bayar
 - Belum di V1: order per jam, daftar order batal
 
 ## 9. Pencatatan (audit dan error)

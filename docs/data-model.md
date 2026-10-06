@@ -91,15 +91,16 @@ Status **Habis** tidak disimpan, tapi dihitung: menu habis kalau ada bahan di re
 | method | `qris` / `tunai` |
 | amount | nominal |
 | recorded_by, recorded_at | Cashier/Admin yang mengonfirmasi |
+| voided_at, voided_by | diisi kalau order dibatalkan setelah konfirmasi (pembayaran tidak dihapus, hanya ditandai batal) |
 
-Dibuat saat konfirmasi. Order yang dibatalkan tidak punya baris di sini.
+Dibuat saat konfirmasi. Order yang dibatalkan sebelum konfirmasi tidak punya baris di sini. Kalau dibatalkan setelah konfirmasi, baris ditandai batal (`voided_at`), tidak dihapus.
 
 ### stock_movements
 | Field | Keterangan |
 |---|---|
 | id, ingredient_id | |
 | order_id | kosong kalau bukan dari order |
-| type | `order_confirm` / `restock` / `adjustment` |
+| type | `order_confirm` / `order_cancel_restore` / `restock` / `adjustment` |
 | qty_change | negatif untuk pengurangan |
 | stock_after | stok setelah perubahan |
 | created_by, created_at, note | |
@@ -148,6 +149,7 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 7. **Nomor antrean** diambil dari `queue_counters` secara atomik supaya tidak ada nomor ganda.
 8. **Menu Habis** dihitung dari stok dan resep, bukan disimpan.
 9. **Idempotensi:** pembuatan order memakai kunci unik dari klien, sehingga klik ganda atau kirim ulang tidak membuat order ganda.
+10. **Pembatalan order yang sudah dikonfirmasi** (status `antrean`) juga satu transaksi: update bersyarat `WHERE status = 'antrean'`, tandai pembayaran batal, kembalikan stok lewat `stock_movements`, ubah status, tulis log. Pembayaran yang batal tidak dihitung di laporan.
 
 ## 4. Belum diputuskan
 

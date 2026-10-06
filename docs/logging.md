@@ -20,8 +20,8 @@ Nama aksi memakai format `kelompok.kejadian`, huruf kecil.
 | Kelompok | Nama aksi |
 |---|---|
 | Order | `order.created`, `order.confirmed`, `order.cancelled`, `order.started`, `order.finished` |
-| Pembayaran | `payment.recorded` (metode, nominal, siapa) |
-| Stok | `stock.deducted` (otomatis saat konfirmasi), `stock.restocked`, `stock.adjusted`, `stock.negative` (peringatan stok minus) |
+| Pembayaran | `payment.recorded` (metode, nominal, siapa), `payment.voided` (dibatalkan bersama order) |
+| Stok | `stock.deducted` (otomatis saat konfirmasi), `stock.restored` (dikembalikan saat pembatalan), `stock.restocked`, `stock.adjusted`, `stock.negative` (peringatan stok minus) |
 | Menu dan resep | `menu.created`, `menu.updated`, `menu.deactivated`, `recipe.updated` |
 | Akun | `account.created`, `account.updated`, `account.deactivated`, `account.password_reset` |
 | Login | `auth.login`, `auth.login_failed`, `auth.logout`, `access.denied` (mencoba membuka yang bukan haknya) |

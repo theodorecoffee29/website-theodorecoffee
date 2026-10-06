@@ -23,7 +23,8 @@ Tidak ada pendaftaran publik. Semua akun internal hanya dibuat oleh Admin.
 | Buat order online | Ya | - | - | - |
 | Input order manual (termasuk waktu manual) | - | Ya | - | Ya |
 | Lihat status order sendiri (lewat ID order) | Ya | - | - | - |
-| Batalkan order (hanya saat Menunggu konfirmasi) | Ya (order sendiri) | Ya | - | Ya |
+| Batalkan order saat Menunggu konfirmasi | Ya (order sendiri) | Ya | - | Ya |
+| Batalkan order di antrean (sebelum Barista menekan Mulai) | - | Ya | - | Ya |
 | Lihat daftar semua order beserta statusnya | - | Ya | - | Ya |
 | Konfirmasi order + pilih metode bayar | - | Ya | - | Ya |
 | Lihat antrean Barista (hanya yang sudah dikonfirmasi) | - | - | Ya | - |

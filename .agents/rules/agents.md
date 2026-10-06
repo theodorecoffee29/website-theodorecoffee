@@ -30,6 +30,8 @@ Perintah di atas dibuat di Fase 1 (setup). Perbarui bagian ini kalau berubah.
 | `docs/order-flow.md` | Status order, perpindahan status, acceptance criteria |
 | `docs/data-model.md` | Tabel, field, aturan data |
 | `docs/permissions.md` | Siapa boleh apa, RLS, keamanan |
+| `docs/api-contract.md` | Fungsi server: input, output, error, validasi |
+| `docs/logging.md` | Aksi yang dicatat, kode error, aturan log |
 | `docs/ui-spec.md` | Tampilan dan desain |
 
 Abaikan `docs/_archive/` (dokumen lama).
@@ -38,7 +40,7 @@ Abaikan `docs/_archive/` (dokumen lama).
 
 1. **Harga dihitung di server.** Jangan pernah percaya harga atau total dari klien.
 2. **Status order hanya berubah lewat fungsi database** (create, confirm, cancel, start, finish), persis sesuai `docs/order-flow.md`. Pakai update bersyarat (`WHERE status = <status lama>`).
-3. **Konfirmasi order = satu transaksi:** cek status, catat pembayaran, kurangi stok, ubah status, tulis log.
+3. **Konfirmasi order = satu transaksi:** cek status, catat pembayaran, kurangi stok, ubah status, tulis log. Pembatalan order yang sudah dikonfirmasi juga satu transaksi (batalkan pembayaran, kembalikan stok).
 4. **Tidak ada hapus atau ubah** untuk: order selesai/dibatalkan, laporan di Riwayat, `activity_logs`, `error_logs`. Order tidak pernah dihapus.
 5. **Semua tabel menolak akses secara default (RLS).** Customer tidak mengakses tabel langsung, hanya lewat fungsi `create_order`, `get_order_status`, `cancel_order`.
 6. **Secret dan `service role` hanya di server** dan environment variable. Jangan masuk kode klien atau repo.
