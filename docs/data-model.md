@@ -130,6 +130,7 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 | Field | Keterangan |
 |---|---|
 | id, at | |
+| code | kode pendek (misal `ERR-4F2A`) yang ditampilkan ke pengguna dan dicocokkan dengan baris ini |
 | source | `client` / `server` / `database` |
 | severity | `warning` / `error` / `critical` |
 | message, context | jsonb konteks (halaman, aksi, payload ringkas) |
