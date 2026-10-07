@@ -58,7 +58,8 @@ Abaikan `docs/_archive/` (dokumen lama).
 
 ```
 src/app/            halaman (customer, status/[orderId], cashier, barista, admin)
-src/components/     komponen UI
+src/components/     komponen tampilan (hanya menerima props, tanpa panggilan API)
+src/features/       logika per area (customer, cashier, barista, admin): hook, pemanggil API, teks
 src/lib/            klien Supabase, validasi (zod), helper log
 src/server/         logika sisi server
 supabase/migrations/  migrasi SQL (tabel, RLS, fungsi), dibuat dengan `npx supabase migration new`
@@ -95,6 +96,20 @@ Pengguna masih pemula dan belajar dari nol lewat proyek ini. Prioritas: **kode s
 3. Apa yang perlu dipelajari dari tugas itu (satu atau dua poin)
 
 **Keamanan kerja:** berhenti dan tanya kalau ada pilihan penting. Jangan menjalankan perintah yang merusak data (hapus data, reset database) tanpa izin.
+
+## Tampilan (sementara sampai Fase 7)
+
+Desain final belum ada. Tampilan sekarang **hanya sementara, polos, dan mudah diganti.**
+
+- Tanpa library UI atau komponen jadi, tanpa animasi, tanpa tema atau warna khusus, tanpa gambar dan ikon. Cukup HTML semantik (form, label, button, table, ul) dengan class Tailwind seperlunya untuk jarak dan tata letak dasar.
+- **Pisahkan logika dan tampilan:**
+  1. Logika (panggil API, polling, state, validasi) ada di hook atau fungsi di `src/features/<area>/`.
+  2. Komponen tampilan di `src/components/` hanya menerima props dan menampilkannya, tanpa memanggil API.
+  3. File halaman di `src/app/` tipis: hanya merakit hook dan komponen.
+- Semua teks yang tampil ke pengguna (judul, label, pesan) disimpan di satu file per area (misalnya `src/features/customer/teks.ts`), bukan tersebar di JSX.
+- Jangan membuat keputusan desain sendiri: tidak ada layout rumit atau penyesuaian responsif berlebihan. Cukup bisa dipakai di layar HP dan laptop.
+- Setiap tombol dan kolom isian punya label teks yang jelas. Tampilan tetap harus berfungsi penuh.
+- Saat desain final dari Stitch siap (Fase 7), hanya `src/components/` dan file di `src/app/` yang diganti. Logika di `src/features/` tidak boleh ikut berubah.
 
 ## Cara kerja
 
