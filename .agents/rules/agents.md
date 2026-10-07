@@ -117,6 +117,7 @@ Pengguna masih pemula dan belajar dari nol lewat proyek ini. Prioritas: **kode s
 - Menambah fitur di luar V1: akun customer, diskon/promo, multi-booth, pesan antar, notifikasi WhatsApp/suara, layar antrean umum, payment gateway, mode offline penuh
 - Mengubah keputusan di dokumen tanpa izin
 - **Menjalankan perintah yang mengubah database atau akun Supabase:** `supabase login`, `link`, `db push`, `db reset`, `migration repair`, atau sejenisnya. Tugasmu hanya menulis file migrasi. Pengguna yang menjalankannya.
+- Membuka, menampilkan, atau menyalin isi `.env.local` atau file rahasia lain. Isinya kunci rahasia: jangan ditulis ke kode, log, komentar, atau jawaban.
 - Menambah dependency besar tanpa alasan
 
 ## Wajib dites
