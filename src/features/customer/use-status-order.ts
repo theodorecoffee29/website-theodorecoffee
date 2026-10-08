@@ -17,7 +17,7 @@ import {
   kirimLogErrorKeServer,
   type StatusOrderResponse,
 } from "./api";
-import { buangOrderAktif } from "./penyimpan-order";
+import { buangOrderAktif, cariNamaCustomer } from "./penyimpan-order";
 import { customerBolehBatalkan, statusSudahFinal, teksStatus } from "./status";
 import { teksCustomer } from "./teks";
 
@@ -33,6 +33,10 @@ const BATASAN_GAGAL_BERURUTAN = 3;
 export type KeadaanStatusOrder = {
   // Status order kalau sudah termuat, atau null saat belum.
   order: StatusOrderResponse | null;
+  // Nama customer yang dipakai saat memesan. Diambil dari penyimpanan di HP
+  // ini, karena get_order_status tidak mengembalikan nama. Kosong kalau tidak
+  // diketahui (mis. halaman dibuka dari HP lain).
+  customerName: string;
   // True saat statusnya sudah final (selesai atau dibatalkan).
   sudahFinal: boolean;
   // True kalau customer boleh membatalkan (hanya saat menunggu konfirmasi).
@@ -74,6 +78,7 @@ export type KeadaanStatusOrder = {
  */
 export function useStatusOrder(orderId: string): KeadaanStatusOrder {
   const [order, setOrder] = useState<StatusOrderResponse | null>(null);
+  const [customerName, setCustomerName] = useState("");
   const [memuat, setMemuat] = useState(true);
   const [gagalMuat, setGagalMuat] = useState(false);
   const [tidakDitemukan, setTidakDitemukan] = useState(false);
@@ -119,6 +124,11 @@ export function useStatusOrder(orderId: string): KeadaanStatusOrder {
     setGagalMuat(false);
     setTidakDitemukan(false);
     setOrder(hasil.data);
+
+    // Ambil nama customer dari penyimpanan HP ini selagi masih ada. Kalau
+    // ordernya sudah final di bawah, catatannya akan dibuang dari penyimpanan,
+    // jadi diambil lebih dulu.
+    setCustomerName(cariNamaCustomer(orderId));
 
     // Status final: buang dari daftar order aktif supaya halaman awal tidak
     // menawarkannya lagi.
@@ -177,7 +187,9 @@ export function useStatusOrder(orderId: string): KeadaanStatusOrder {
           if (jumlahGagalRef.current === BATASAN_GAGAL_BERURUTAN) {
             void kirimLogErrorKeServer(
               "gagal_muat_status",
-              "Polling status gagal " + jumlahGagalRef.current + " kali berturut-turut",
+              "Polling status gagal " +
+                jumlahGagalRef.current +
+                " kali berturut-turut",
               orderId,
             );
           }
@@ -271,6 +283,7 @@ export function useStatusOrder(orderId: string): KeadaanStatusOrder {
 
   return {
     order: order,
+    customerName: customerName,
     sudahFinal: order !== null && statusSudahFinal(order.status),
     bolehBatalkan: customerBolehBatalkan(statusSekarang),
     dialogBatalTerbuka: dialogBatalTerbuka,

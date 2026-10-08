@@ -132,11 +132,15 @@ describe("hitungTotal", () => {
   });
 
   it("mengabaikan catatan (catatan tidak berpengaruh ke harga)", () => {
-    const tanpaCatatan: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "2", note: "" }];
+    const tanpaCatatan: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "2", note: "" },
+    ];
     const denganCatatan: BarisPesanan[] = [
       { menuItemId: "menu-1", qty: "2", note: "less sugar sekeras batu" },
     ];
-    expect(hitungTotal(denganCatatan, daftarMenu)).toBe(hitungTotal(tanpaCatatan, daftarMenu));
+    expect(hitungTotal(denganCatatan, daftarMenu)).toBe(
+      hitungTotal(tanpaCatatan, daftarMenu),
+    );
   });
 });
 
@@ -153,37 +157,49 @@ describe("menjadiItemSiapKirim", () => {
   });
 
   it("tidak mengirim catatan yang kosong", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "1", note: "  " }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "1", note: "  " },
+    ];
     const hasil = menjadiItemSiapKirim(baris);
     expect(hasil[0].note).toBeUndefined();
   });
 
   it("mengirim catatan yang ada", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "1", note: " less sugar " }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "1", note: " less sugar " },
+    ];
     const hasil = menjadiItemSiapKirim(baris);
     // Catatan dipangkas spasi pinggir sebelum dikirim.
     expect(hasil[0].note).toBe("less sugar");
   });
 
   it("mengembalikan daftar kosong saat semua qty 0", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "0", note: "" }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "0", note: "" },
+    ];
     expect(menjadiItemSiapKirim(baris)).toEqual([]);
   });
 });
 
 describe("bolehKirim", () => {
   it("benar saat nama valid dan ada minimal satu item", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "1", note: "" }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "1", note: "" },
+    ];
     expect(bolehKirim("Budi", baris, pesan)).toBe(true);
   });
 
   it("salah saat nama kosong walau item ada", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "1", note: "" }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "1", note: "" },
+    ];
     expect(bolehKirim("", baris, pesan)).toBe(false);
   });
 
   it("salah saat tidak ada item yang dipilih", () => {
-    const baris: BarisPesanan[] = [{ menuItemId: "menu-1", qty: "0", note: "" }];
+    const baris: BarisPesanan[] = [
+      { menuItemId: "menu-1", qty: "0", note: "" },
+    ];
     expect(bolehKirim("Budi", baris, pesan)).toBe(false);
   });
 

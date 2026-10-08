@@ -9,11 +9,7 @@
 
 // Status yang mungkin dikirim server.
 export type StatusOrder =
-  | "menunggu_konfirmasi"
-  | "antrean"
-  | "dikerjakan"
-  | "selesai"
-  | "dibatalkan";
+  "menunggu_konfirmasi" | "antrean" | "dikerjakan" | "selesai" | "dibatalkan";
 
 // Status yang berarti order sudah tidak berjalan lagi. Setelah sampai di sini,
 // order dibuang dari daftar order aktif.

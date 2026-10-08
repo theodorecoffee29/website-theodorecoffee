@@ -24,7 +24,9 @@ import { teksCustomer } from "@/features/customer/teks";
 export function DaftarOrderAktif({ orderAktif }: { orderAktif: OrderAktif[] }) {
   return (
     <section>
-      <h2 className="text-lg font-semibold">{teksCustomer.beranda.judulOrderAktif}</h2>
+      <h2 className="text-lg font-semibold">
+        {teksCustomer.beranda.judulOrderAktif}
+      </h2>
 
       {/* Daftar bukan tabel supaya mudah dipakai di layar HP. */}
       <ul className="mt-3 space-y-2">
@@ -35,7 +37,10 @@ export function DaftarOrderAktif({ orderAktif }: { orderAktif: OrderAktif[] }) {
               href={"/status/" + satuOrder.orderId}
               className="block rounded border border-gray-300 px-3 py-2"
             >
-              {teksCustomer.beranda.kalimatOrderAktif.replace("{nomor}", String(satuOrder.queueNumber))}
+              {teksCustomer.beranda.kalimatOrderAktif.replace(
+                "{nomor}",
+                String(satuOrder.queueNumber),
+              )}
             </Link>
           </li>
         ))}
@@ -92,12 +97,17 @@ export function FormPesan(props: PropsFormPesan) {
 
       {/* Pesan error umum (mis. gagal kirim, atau gagal memuat menu). */}
       {props.pesanError ? (
-        <p role="alert" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p
+          role="alert"
+          className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
           {props.pesanError}
         </p>
       ) : null}
 
-      {props.memuatMenu ? <p className="text-sm">{teksCustomer.status.memuat}</p> : null}
+      {props.memuatMenu ? (
+        <p className="text-sm">{teksCustomer.status.memuat}</p>
+      ) : null}
 
       {/* Isian nama customer. */}
       <div>
@@ -114,22 +124,31 @@ export function FormPesan(props: PropsFormPesan) {
           onChange={(peristiwa) => props.ubahNama(peristiwa.target.value)}
           className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
         />
-        {props.pesanNama ? <p className="mt-1 text-sm text-red-600">{props.pesanNama}</p> : null}
+        {props.pesanNama ? (
+          <p className="mt-1 text-sm text-red-600">{props.pesanNama}</p>
+        ) : null}
       </div>
 
       {/* Daftar menu: satu menu satu baris. */}
       <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">{teksCustomer.formPesan.labelMenu}</legend>
+        <legend className="text-sm font-medium">
+          {teksCustomer.formPesan.labelMenu}
+        </legend>
 
         {props.menu.map((satuMenu, index) => {
           // Cari baris pesanan menu ini supaya isiannya terhubung.
-          const baris = props.barisPesanan.find((satuBaris) => satuBaris.menuItemId === satuMenu.id);
+          const baris = props.barisPesanan.find(
+            (satuBaris) => satuBaris.menuItemId === satuMenu.id,
+          );
 
           // Menu yang habis tidak bisa dipilih, jadi isiannya dimatikan.
           const bisaDipilih = satuMenu.available;
 
           return (
-            <div key={satuMenu.id} className="rounded border border-gray-200 px-3 py-2">
+            <div
+              key={satuMenu.id}
+              className="rounded border border-gray-200 px-3 py-2"
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium">{satuMenu.name}</span>
                 <span className="text-sm">{formatRupiah(satuMenu.price)}</span>
@@ -137,7 +156,9 @@ export function FormPesan(props: PropsFormPesan) {
 
               {/* Menu habis: tampilkan label "Habis" dan jangan izinkan diisi. */}
               {!bisaDipilih ? (
-                <p className="mt-1 text-sm text-gray-500">{teksCustomer.formPesan.labelHabis}</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {teksCustomer.formPesan.labelHabis}
+                </p>
               ) : null}
 
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -146,7 +167,8 @@ export function FormPesan(props: PropsFormPesan) {
                     htmlFor={"qty-" + index}
                     className="block text-xs text-gray-600"
                   >
-                    {teksCustomer.formPesan.labelJumlah} (0-{teksCustomer.formPesan.maksQty})
+                    {teksCustomer.formPesan.labelJumlah} (0-
+                    {teksCustomer.formPesan.maksQty})
                   </label>
                   <input
                     id={"qty-" + index}
@@ -190,17 +212,25 @@ export function FormPesan(props: PropsFormPesan) {
       </fieldset>
 
       {/* Pesan untuk jumlah atau catatan yang salah. */}
-      {props.pesanItem ? <p className="text-sm text-red-600">{props.pesanItem}</p> : null}
+      {props.pesanItem ? (
+        <p className="text-sm text-red-600">{props.pesanItem}</p>
+      ) : null}
 
       {/* Total. Hanya perkiraan; harga sebenarnya dihitung server. */}
       <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-        <span className="text-sm font-medium">{teksCustomer.formPesan.labelTotal}</span>
-        <span className="text-sm font-semibold">{formatRupiah(props.total)}</span>
+        <span className="text-sm font-medium">
+          {teksCustomer.formPesan.labelTotal}
+        </span>
+        <span className="text-sm font-semibold">
+          {formatRupiah(props.total)}
+        </span>
       </div>
 
       {/* Pesan sedang mengirim. */}
       {props.sedangMengirim ? (
-        <p className="text-sm text-gray-600">{teksCustomer.formPesan.pesanMengirim}</p>
+        <p className="text-sm text-gray-600">
+          {teksCustomer.formPesan.pesanMengirim}
+        </p>
       ) : null}
 
       <button
@@ -225,7 +255,9 @@ export function FormPesan(props: PropsFormPesan) {
  * Output: elemen React.
  */
 export function PesanMemuat() {
-  return <p className="text-sm text-gray-600">{teksCustomer.beranda.cekSesi}</p>;
+  return (
+    <p className="text-sm text-gray-600">{teksCustomer.beranda.cekSesi}</p>
+  );
 }
 
 /**
@@ -234,7 +266,13 @@ export function PesanMemuat() {
  * Input: judul halaman dan isi (children).
  * Output: elemen React.
  */
-export function KerangkaCustomer({ judul, children }: { judul: string; children: React.ReactNode }) {
+export function KerangkaCustomer({
+  judul,
+  children,
+}: {
+  judul: string;
+  children: React.ReactNode;
+}) {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-4">
       <h1 className="text-xl font-bold">{judul}</h1>
@@ -245,5 +283,8 @@ export function KerangkaCustomer({ judul, children }: { judul: string; children:
 
 // Fungsi kecil untuk menulis rupiah, dipakai di beberapa komponen ini.
 function formatRupiah(jumlah: number): string {
-  return teksCustomer.formPesan.formatRupiah.replace("{jumlah}", jumlah.toLocaleString("id-ID"));
+  return teksCustomer.formPesan.formatRupiah.replace(
+    "{jumlah}",
+    jumlah.toLocaleString("id-ID"),
+  );
 }

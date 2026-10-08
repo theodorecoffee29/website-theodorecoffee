@@ -60,7 +60,9 @@ export type OrderAktif = {
  * sedikit (biasanya 1), jadi ini cepat.
  */
 export function useOrderAktif(): TampilanBeranda {
-  const [tampilan, setTampilan] = useState<TampilanBeranda>({ keadaan: "memuat" });
+  const [tampilan, setTampilan] = useState<TampilanBeranda>({
+    keadaan: "memuat",
+  });
 
   // useEffect hanya berjalan di browser, jadi localStorage aman dipakai di sini.
   useEffect(() => {
@@ -69,19 +71,22 @@ export function useOrderAktif(): TampilanBeranda {
     let masihJalan = true;
 
     async function periksa() {
-      const daftarId = bacaOrderAktif();
+      const daftarTersimpan = bacaOrderAktif();
 
       // Tidak ada order tersimpan: form pesan.
-      if (daftarId.length === 0) {
+      if (daftarTersimpan.length === 0) {
         setTampilan({ keadaan: "form" });
         return;
       }
 
       // Tanya status setiap order satu per satu.
       const orderYangAktif: OrderAktif[] = [];
+      // Daftar yang masih aktif untuk ditulis ulang ke localStorage. Nama
+      // customer ikut dibawa supaya halaman status tetap bisa menampilkannya.
+      const tersimpanBaru: typeof daftarTersimpan = [];
 
-      for (const satuId of daftarId) {
-        const hasil = await ambilStatusOrder(satuId);
+      for (const satuOrder of daftarTersimpan) {
+        const hasil = await ambilStatusOrder(satuOrder.orderId);
 
         // Gagal sementara (internet putus): order ini diamkan dulu supaya
         // tidak ikut terbuang. Kalau order-nya memang sudah tidak ada,
@@ -93,21 +98,23 @@ export function useOrderAktif(): TampilanBeranda {
           }
 
           // Error lain: biarkan tetap di daftar, jangan dibuang.
+          tersimpanBaru.push(satuOrder);
           continue;
         }
 
         const data = hasil.data;
         if (statusMasihAktif(data.status)) {
           orderYangAktif.push({
-            orderId: satuId,
+            orderId: satuOrder.orderId,
             queueNumber: data.queueNumber,
           });
+          tersimpanBaru.push(satuOrder);
         }
         // Status selain itu (selesai/dibatalkan/tidak dikenal): dibuang.
       }
 
       // Tulis ulang daftar supaya yang sudah selesai tidak muncul lagi.
-      gantiOrderAktif(orderYangAktif.map((satu) => satu.orderId));
+      gantiOrderAktif(tersimpanBaru);
 
       if (!masihJalan) {
         return;

@@ -38,7 +38,9 @@ export function StatusOrder(props: PropsStatusOrder) {
   if (props.tidakDitemukan) {
     return (
       <section className="space-y-4">
-        <p className="text-sm text-red-600">{teksCustomer.status.tidakDitemukan}</p>
+        <p className="text-sm text-red-600">
+          {teksCustomer.status.tidakDitemukan}
+        </p>
         <Link href="/" className="underline">
           {teksCustomer.status.tautanPesanLagi}
         </Link>
@@ -48,32 +50,42 @@ export function StatusOrder(props: PropsStatusOrder) {
 
   // Masih memuat untuk pertama kali.
   if (props.memuat && props.order === null) {
-    return <p className="text-sm text-gray-600">{teksCustomer.status.memuat}</p>;
+    return (
+      <p className="text-sm text-gray-600">{teksCustomer.status.memuat}</p>
+    );
   }
 
   // Statusnya sudah ada, tampilkan detailnya.
   const order = props.order;
   if (order === null) {
-    return <p className="text-sm text-gray-600">{teksCustomer.status.memuat}</p>;
+    return (
+      <p className="text-sm text-gray-600">{teksCustomer.status.memuat}</p>
+    );
   }
 
   return (
     <section className="space-y-4">
       {/* Nomor antrean, ukuran lebih besar supaya mudah dibaca dari jauh. */}
       <div>
-        <p className="text-sm text-gray-600">{teksCustomer.status.labelNomorAntrean}</p>
+        <p className="text-sm text-gray-600">
+          {teksCustomer.status.labelNomorAntrean}
+        </p>
         <p className="text-3xl font-bold">{order.queueNumber}</p>
       </div>
 
       {/* Nama customer. */}
       <div>
         <p className="text-sm text-gray-600">{teksCustomer.status.labelNama}</p>
-        <p className="text-sm">{props.customerName}</p>
+        <p className="text-sm">
+          {props.customerName || teksCustomer.status.namaTidakDiketahui}
+        </p>
       </div>
 
       {/* Status saat ini. */}
       <div>
-        <p className="text-sm text-gray-600">{teksCustomer.status.labelStatus}</p>
+        <p className="text-sm text-gray-600">
+          {teksCustomer.status.labelStatus}
+        </p>
         <p className="text-sm font-medium">{props.teksStatus}</p>
       </div>
 
@@ -93,7 +105,10 @@ export function StatusOrder(props: PropsStatusOrder) {
 
       {/* Pesan tambahan (mis. status sudah berubah saat pembatalan). */}
       {props.pesan ? (
-        <p role="alert" className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm">
+        <p
+          role="alert"
+          className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm"
+        >
           {props.pesan}
         </p>
       ) : null}
@@ -103,7 +118,10 @@ export function StatusOrder(props: PropsStatusOrder) {
         <p className="text-sm text-gray-600">{teksCustomer.status.labelItem}</p>
         <ul className="mt-1 space-y-2">
           {order.items.map((satuItem, index) => (
-            <li key={index} className="rounded border border-gray-200 px-3 py-2 text-sm">
+            <li
+              key={index}
+              className="rounded border border-gray-200 px-3 py-2 text-sm"
+            >
               <span className="font-medium">
                 {satuItem.qty} x {satuItem.name}
               </span>
@@ -120,8 +138,12 @@ export function StatusOrder(props: PropsStatusOrder) {
 
       {/* Total. */}
       <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-        <span className="text-sm font-medium">{teksCustomer.status.labelTotal}</span>
-        <span className="text-sm font-semibold">{formatRupiah(order.total)}</span>
+        <span className="text-sm font-medium">
+          {teksCustomer.status.labelTotal}
+        </span>
+        <span className="text-sm font-semibold">
+          {formatRupiah(order.total)}
+        </span>
       </div>
 
       {/* Tombol batalkan: hanya saat menunggu konfirmasi. Saat status sudah
@@ -136,7 +158,10 @@ export function StatusOrder(props: PropsStatusOrder) {
           {teksCustomer.status.tombolBatalkan}
         </button>
       ) : order.status === "selesai" || order.status === "dibatalkan" ? (
-        <Link href="/" className="block rounded bg-gray-900 px-3 py-2 text-center text-white">
+        <Link
+          href="/"
+          className="block rounded bg-gray-900 px-3 py-2 text-center text-white"
+        >
           {teksCustomer.status.tautanPesanLagi}
         </Link>
       ) : null}
@@ -180,7 +205,9 @@ function DialogBatal({
         <h2 id="judul-dialog-batal" className="text-base font-semibold">
           {teksCustomer.status.judulDialogBatal}
         </h2>
-        <p className="mt-2 text-sm text-gray-600">{teksCustomer.status.isiDialogBatal}</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {teksCustomer.status.isiDialogBatal}
+        </p>
 
         <div className="mt-4 flex gap-2">
           {/* Tidak: tutup tanpa membatalkan apa pun. */}
@@ -207,5 +234,8 @@ function DialogBatal({
 
 // Fungsi kecil untuk menulis rupiah, sama seperti di komponen beranda.
 function formatRupiah(jumlah: number): string {
-  return teksCustomer.formPesan.formatRupiah.replace("{jumlah}", jumlah.toLocaleString("id-ID"));
+  return teksCustomer.formPesan.formatRupiah.replace(
+    "{jumlah}",
+    jumlah.toLocaleString("id-ID"),
+  );
 }

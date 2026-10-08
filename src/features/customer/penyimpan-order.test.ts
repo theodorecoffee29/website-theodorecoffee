@@ -24,7 +24,9 @@ import {
 } from "./penyimpan-order";
 
 // Tiruan localStorage yang bekerja normal, seperti browser.
-function buatPenyimpananNormal(): PenyimpananSederhana & { isi: Map<string, string> } {
+function buatPenyimpananNormal(): PenyimpananSederhana & {
+  isi: Map<string, string>;
+} {
   const isi = new Map<string, string>();
   return {
     isi: isi,

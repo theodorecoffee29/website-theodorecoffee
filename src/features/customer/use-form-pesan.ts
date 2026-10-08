@@ -10,7 +10,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ambilMenu, kirimLogErrorKeServer, kirimPesanan, type MenuItem } from "./api";
+import {
+  ambilMenu,
+  kirimLogErrorKeServer,
+  kirimPesanan,
+  type MenuItem,
+} from "./api";
 import { tambahOrderAktif } from "./penyimpan-order";
 import {
   bolehKirim,
@@ -75,7 +80,9 @@ export function useFormPesan(): KeadaanFormPesan {
     sedangMuat: boolean;
     daftarMenu: MenuItem[];
   }>({ sedangMuat: true, daftarMenu: [] });
-  const [isiBaris, setIsiBaris] = useState<Record<string, { qty: string; note: string }>>({});
+  const [isiBaris, setIsiBaris] = useState<
+    Record<string, { qty: string; note: string }>
+  >({});
   const [customerName, setCustomerName] = useState("");
   const [sedangMengirim, setSedangMengirim] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
@@ -133,7 +140,10 @@ export function useFormPesan(): KeadaanFormPesan {
   // Total perkiraan, hanya untuk tampilan.
   const total = hitungTotal(
     barisPesanan,
-    muatanMenu.daftarMenu.map((satuMenu) => ({ id: satuMenu.id, price: satuMenu.price })),
+    muatanMenu.daftarMenu.map((satuMenu) => ({
+      id: satuMenu.id,
+      price: satuMenu.price,
+    })),
   );
 
   // Validasi nama (untuk pesan dan tanda di sebelah isian nama).
@@ -145,13 +155,19 @@ export function useFormPesan(): KeadaanFormPesan {
   // Validasi jumlah dan catatan tiap baris.
   let pesanItem: string | null = null;
   for (const satuBaris of barisPesanan) {
-    const cekQty = validasiQty(satuBaris.qty, teksCustomer.formPesan.labelJumlahBenar);
+    const cekQty = validasiQty(
+      satuBaris.qty,
+      teksCustomer.formPesan.labelJumlahBenar,
+    );
     if (!cekQty.valid) {
       pesanItem = cekQty.pesan;
       break;
     }
 
-    const cekCatatan = validasiCatatan(satuBaris.note, teksCustomer.formPesan.labelCatatanMaks);
+    const cekCatatan = validasiCatatan(
+      satuBaris.note,
+      teksCustomer.formPesan.labelCatatanMaks,
+    );
     if (!cekCatatan.valid) {
       pesanItem = cekCatatan.pesan;
       break;
@@ -226,10 +242,15 @@ export function useFormPesan(): KeadaanFormPesan {
       // ke Admin kalau ada masalah.
       if (hasil.error.code) {
         setPesanError(
-          teksCustomer.formPesan.pesanGagalKirimDenganKode.replace("{kode}", hasil.error.code),
+          teksCustomer.formPesan.pesanGagalKirimDenganKode.replace(
+            "{kode}",
+            hasil.error.code,
+          ),
         );
       } else {
-        setPesanError(hasil.error.message || teksCustomer.formPesan.pesanGagalKirim);
+        setPesanError(
+          hasil.error.message || teksCustomer.formPesan.pesanGagalKirim,
+        );
       }
 
       // Laporkan ke server (gagal kirim order adalah jenis error yang diizinkan
@@ -280,7 +301,10 @@ export function useFormPesan(): KeadaanFormPesan {
  * tertentu, jadi bentuk sederhana sudah cukup.
  */
 function buatUuid(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
 

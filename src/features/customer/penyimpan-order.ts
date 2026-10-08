@@ -176,10 +176,18 @@ export function tambahOrderAktif(
 
   if (sudahAda) {
     // Sudah ada: cukup perbarui namanya kalau berubah, jangan tambah lagi.
-    if (daftar.some((satuOrder) => satuOrder.orderId === orderId && satuOrder.customerName !== customerName)) {
+    if (
+      daftar.some(
+        (satuOrder) =>
+          satuOrder.orderId === orderId &&
+          satuOrder.customerName !== customerName,
+      )
+    ) {
       tulisOrderAktif(
         daftar.map((satuOrder) =>
-          satuOrder.orderId === orderId ? { orderId: orderId, customerName: customerName } : satuOrder,
+          satuOrder.orderId === orderId
+            ? { orderId: orderId, customerName: customerName }
+            : satuOrder,
         ),
         penyimpanan,
       );
@@ -187,7 +195,10 @@ export function tambahOrderAktif(
     return;
   }
 
-  tulisOrderAktif([...daftar, { orderId: orderId, customerName: customerName }], penyimpanan);
+  tulisOrderAktif(
+    [...daftar, { orderId: orderId, customerName: customerName }],
+    penyimpanan,
+  );
 }
 
 /**
@@ -204,7 +215,9 @@ export function buangOrderAktif(
   penyimpanan: PenyimpananSederhana | null = ambilPenyimpanan(),
 ): void {
   const daftar = bacaOrderAktif(penyimpanan);
-  const daftarBaru = daftar.filter((satuOrder) => satuOrder.orderId !== orderId);
+  const daftarBaru = daftar.filter(
+    (satuOrder) => satuOrder.orderId !== orderId,
+  );
 
   // Kalau tidak ada yang berubah, jangan tulis ulang (hemat operasi).
   if (daftarBaru.length === daftar.length) {

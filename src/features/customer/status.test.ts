@@ -6,7 +6,12 @@
 // Teks yang diharapkan diambil dari docs/order-flow.md bagian 1.
 
 import { describe, expect, it } from "vitest";
-import { customerBolehBatalkan, statusMasihAktif, statusSudahFinal, teksStatus } from "./status";
+import {
+  customerBolehBatalkan,
+  statusMasihAktif,
+  statusSudahFinal,
+  teksStatus,
+} from "./status";
 
 describe("teksStatus", () => {
   it("menampilkan Menunggu konfirmasi untuk menunggu_konfirmasi", () => {

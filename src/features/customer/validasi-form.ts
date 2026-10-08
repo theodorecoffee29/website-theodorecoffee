@@ -33,10 +33,13 @@ export type HasilValidasiNama = { valid: boolean; pesan: string | null };
  *
  * Aturan (setelah spasi pinggir dipangkas): wajib, maksimal 50 karakter.
  */
-export function validasiNama(nama: string, pesan: {
-  wajib: string;
-  maks: string;
-}): HasilValidasiNama {
+export function validasiNama(
+  nama: string,
+  pesan: {
+    wajib: string;
+    maks: string;
+  },
+): HasilValidasiNama {
   const namaBersih = nama.trim();
 
   if (namaBersih.length === 0) {
@@ -62,7 +65,10 @@ export type HasilValidasiItem = { valid: boolean; pesan: string | null };
  * Aturan: bilangan bulat antara 0 sampai 99. Angka 0 berarti menu itu tidak
  * dipilih (jadi boleh, dan tidak dihitung sebagai item).
  */
-export function validasiQty(qtyTeks: string, pesanMaks: string): HasilValidasiItem {
+export function validasiQty(
+  qtyTeks: string,
+  pesanMaks: string,
+): HasilValidasiItem {
   // Isian kosong dianggap 0 (menu tidak dipilih).
   if (qtyTeks.trim() === "") {
     return { valid: true, pesan: null };
@@ -89,7 +95,10 @@ export function validasiQty(qtyTeks: string, pesanMaks: string): HasilValidasiIt
  *
  * Aturan: opsional, maksimal 100 karakter.
  */
-export function validasiCatatan(catatan: string, pesanMaks: string): HasilValidasiItem {
+export function validasiCatatan(
+  catatan: string,
+  pesanMaks: string,
+): HasilValidasiItem {
   if (catatan.length > MAKSIMAL_CATATAN) {
     return { valid: false, pesan: pesanMaks };
   }
@@ -117,7 +126,10 @@ export type BarisPesanan = {
  * (mis. dinonaktifkan), barisnya tidak bisa dihitung dan tidak perlu
  * menggagalkan tampilan total.
  */
-export function hitungTotal(barisPesanan: BarisPesanan[], daftarMenu: { id: string; price: number }[]): number {
+export function hitungTotal(
+  barisPesanan: BarisPesanan[],
+  daftarMenu: { id: string; price: number }[],
+): number {
   let total = 0;
 
   for (const satuBaris of barisPesanan) {
@@ -127,7 +139,9 @@ export function hitungTotal(barisPesanan: BarisPesanan[], daftarMenu: { id: stri
       continue;
     }
 
-    const menu = daftarMenu.find((satuMenu) => satuMenu.id === satuBaris.menuItemId);
+    const menu = daftarMenu.find(
+      (satuMenu) => satuMenu.id === satuBaris.menuItemId,
+    );
     if (!menu) {
       continue;
     }

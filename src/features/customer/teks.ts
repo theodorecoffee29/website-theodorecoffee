@@ -54,6 +54,7 @@ export const teksCustomer = {
     judul: "Status pesanan",
     labelNomorAntrean: "Nomor antrean",
     labelNama: "Nama",
+    namaTidakDiketahui: "-",
     labelItem: "Item",
     labelTotal: "Total",
     labelStatus: "Status",

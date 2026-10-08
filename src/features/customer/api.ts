@@ -21,7 +21,8 @@ export type GagalApi = {
 };
 
 // Hasil pemanggilan API: sukses atau gagal. Tidak pernah melempar error.
-export type HasilApi<T> = { berhasil: true; data: T } | { berhasil: false; error: GagalApi };
+export type HasilApi<T> =
+  { berhasil: true; data: T } | { berhasil: false; error: GagalApi };
 
 // Satu item menu dari /api/menu.
 export type MenuItem = {
@@ -48,7 +49,9 @@ export type StatusOrderResponse = {
  */
 export async function ambilMenu(): Promise<HasilApi<MenuItem[]>> {
   // getMenu() mengembalikan { items: [...] }.
-  const hasil = await panggilApi<{ items: MenuItem[] }>("/api/menu", { method: "GET" });
+  const hasil = await panggilApi<{ items: MenuItem[] }>("/api/menu", {
+    method: "GET",
+  });
 
   if (!hasil.berhasil) {
     return hasil;
@@ -75,7 +78,14 @@ export async function kirimPesanan(params: {
   customerName: string;
   items: { menuItemId: string; qty: number; note?: string }[];
   idempotencyKey: string;
-}): Promise<HasilApi<{ orderId: string; queueNumber: number; status: string; total: number }>> {
+}): Promise<
+  HasilApi<{
+    orderId: string;
+    queueNumber: number;
+    status: string;
+    total: number;
+  }>
+> {
   return panggilApi("/api/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -94,7 +104,9 @@ export async function kirimPesanan(params: {
  * Output: HasilApi berisi status order, atau GagalApi (misalnya ORDER_NOT_FOUND
  *         kalau id-nya tidak ada).
  */
-export async function ambilStatusOrder(orderId: string): Promise<HasilApi<StatusOrderResponse>> {
+export async function ambilStatusOrder(
+  orderId: string,
+): Promise<HasilApi<StatusOrderResponse>> {
   return panggilApi("/api/orders/" + orderId + "/status", { method: "GET" });
 }
 
@@ -125,7 +137,11 @@ export async function batalkanOrder(
  * akan pernah terlihat oleh Admin.
  */
 export async function kirimLogErrorKeServer(
-  jenis: "gagal_kirim_order" | "gagal_muat_status" | "gagal_konfirmasi" | "gagal_aksi_staf",
+  jenis:
+    | "gagal_kirim_order"
+    | "gagal_muat_status"
+    | "gagal_konfirmasi"
+    | "gagal_aksi_staf",
   message: string,
   orderId?: string,
 ): Promise<void> {
@@ -139,7 +155,8 @@ export async function kirimLogErrorKeServer(
     // Laporan log gagal dikirim (mis. internet putus). Ini bukan error fatal
     // untuk halaman, jadi cukup dicatat di console browser.
     console.error(
-      "[src/features/customer/api] gagal mengirim log error ke server: " + String(error),
+      "[src/features/customer/api] gagal mengirim log error ke server: " +
+        String(error),
     );
   }
 }
@@ -158,7 +175,10 @@ export async function kirimLogErrorKeServer(
  *      dikembalikan sebagai GagalApi.
  *   3. Kalau responsnya ok=false, ambil bagian error-nya.
  */
-async function panggilApi<T>(url: string, opsi: RequestInit): Promise<HasilApi<T>> {
+async function panggilApi<T>(
+  url: string,
+  opsi: RequestInit,
+): Promise<HasilApi<T>> {
   let respons: Response;
 
   // 1. Panggil server. Ini bisa gagal karena jaringan.
@@ -166,12 +186,18 @@ async function panggilApi<T>(url: string, opsi: RequestInit): Promise<HasilApi<T
     respons = await fetch(url, opsi);
   } catch (error) {
     // Jaringan atau server tidak bisa dihubungi.
-    console.error("[src/features/customer/api] gagal memanggil " + url + ": " + String(error));
+    console.error(
+      "[src/features/customer/api] gagal memanggil " +
+        url +
+        ": " +
+        String(error),
+    );
     return {
       berhasil: false,
       error: {
         type: "INTERNAL_ERROR",
-        message: "Tidak bisa menghubungi server. Periksa koneksi internet kamu.",
+        message:
+          "Tidak bisa menghubungi server. Periksa koneksi internet kamu.",
       },
     };
   }
@@ -182,10 +208,18 @@ async function panggilApi<T>(url: string, opsi: RequestInit): Promise<HasilApi<T
   try {
     data = await respons.json();
   } catch (error) {
-    console.error("[src/features/customer/api] balasan " + url + " bukan JSON: " + String(error));
+    console.error(
+      "[src/features/customer/api] balasan " +
+        url +
+        " bukan JSON: " +
+        String(error),
+    );
     return {
       berhasil: false,
-      error: { type: "INTERNAL_ERROR", message: "Terjadi kesalahan. Coba lagi." },
+      error: {
+        type: "INTERNAL_ERROR",
+        message: "Terjadi kesalahan. Coba lagi.",
+      },
     };
   }
 

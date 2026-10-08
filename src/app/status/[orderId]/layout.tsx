@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LayoutStatus({ children }: { children: React.ReactNode }) {
+export default function LayoutStatus({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <>{children}</>;
 }

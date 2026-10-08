@@ -32,7 +32,7 @@ export default function HalamanStatusOrder({
     <KerangkaCustomer judul={teksCustomer.status.judul}>
       <StatusOrder
         order={keadaan.order}
-        customerName={"-"}
+        customerName={keadaan.customerName}
         teksStatus={keadaan.teksStatus}
         bolehBatalkan={keadaan.bolehBatalkan}
         dialogBatalTerbuka={keadaan.dialogBatalTerbuka}
