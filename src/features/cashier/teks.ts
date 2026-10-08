@@ -112,6 +112,70 @@ export const teksCashier = {
     baris: "{bahan}: sisa {sisa}",
   },
 
+  // Form order manual (bagian atas halaman /cashier).
+  formManual: {
+    judul: "Pesanan manual",
+    keterangan:
+      "Untuk customer yang datang langsung ke kasir. Pesanan ini langsung masuk antrean Barista setelah disimpan.",
+    labelNama: "Nama customer",
+    placeholderNama: "Contoh: Budi",
+    labelMenu: "Menu",
+    labelJumlah: "Jumlah",
+    labelCatatan: "Catatan (opsional)",
+    placeholderCatatan: "Contoh: less sugar",
+    // Label menu yang bahannya tidak cukup: tampil "Habis" dan tidak bisa
+    // dipilih (docs/data-model.md: stok boleh kurang, tapi menu satu porsi
+    // tidak boleh dipesan).
+    labelHabis: "Habis",
+    labelMetodeBayar: "Metode bayar",
+    // Kotak centang waktu manual.
+    labelWaktuManual: "Waktu manual (catatan kertas)",
+    keteranganWaktuManual:
+      "Untuk pesanan yang tercatat di kertas. Waktu ini hanya untuk HARI INI.",
+    labelJam: "Jam",
+    labelMenit: "Menit",
+    // Total ditampilkan sebagai informasi saja.
+    labelTotal: "Total (perkiraan)",
+    keteranganTotal: "Harga sebenarnya dihitung server saat menyimpan.",
+    tombolPeriksa: "Periksa dan simpan",
+    // Pesan validasi.
+    pesanNamaWajib: "Nama wajib diisi.",
+    pesanNamaMaks: "Nama maksimal 50 karakter.",
+    pesanJumlahMaks: "Jumlah tiap menu harus antara 0 sampai 99.",
+    pesanCatatanMaks: "Catatan maksimal 100 karakter.",
+    pesanJumlahBarisMaks: "Pesanan maksimal 20 baris item.",
+    // Pola kalimat untuk pesan sukses, misal "Pesanan #7 disimpan, sudah masuk
+    // antrean."
+    pesanBerhasil: "Pesanan nomor {nomor} disimpan, sudah masuk antrean.",
+    pesanGagalSimpan: "Pesanan gagal disimpan, coba lagi.",
+    pesanGagalSimpanDenganKode:
+      "Pesanan gagal disimpan, coba lagi. Kode: {kode}",
+    // MENU_UNAVAILABLE: ada menu yang bahannya habis.
+    pesanMenuHabis: "Ada menu yang habis",
+    pesanMengirim: "Mengirim pesanan…",
+    memuatMenu: "Memuat menu…",
+    gagalMuatMenu: "Gagal memuat menu, coba muat ulang.",
+  },
+
+  // Dialog ringkasan sebelum menyimpan order manual.
+  dialogRingkas: {
+    judul: "Periksa pesanan ini dulu",
+    // Label untuk daftar item di ringkasan.
+    labelItem: "Item",
+    // Pola kalimat per item, misal "2 x Americano (less sugar)".
+    formatItem: "{jumlah} x {nama}",
+    formatItemDenganCatatan: "{jumlah} x {nama} ({catatan})",
+    labelWaktu: "Waktu manual",
+    labelMetodeBayar: "Metode bayar",
+    // Tombol.
+    tombolKembali: "Kembali",
+    tombolSimpan: "Simpan",
+    tombolSimpanSedang: "Menyimpan…",
+  },
+
+  // Label pada kartu pesanan untuk order yang diinput dari catatan kertas.
+  orderWaktuManual: "Waktu manual",
+
   // Pesan memuat dan error.
   pesan: {
     memuat: "Memuat daftar pesanan…",

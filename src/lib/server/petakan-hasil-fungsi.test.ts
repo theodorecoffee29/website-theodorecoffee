@@ -15,6 +15,7 @@ import {
   petakanHasilMulai,
   petakanHasilSelesai,
   petakanHasilStatusOrder,
+  petakanOrderManual,
 } from "./petakan-hasil-fungsi";
 
 // Bentuk jsonb yang benar-benar dikembalikan create_order.
@@ -253,5 +254,67 @@ describe("pemeta status sederhana (batal, mulai, selesai)", () => {
 
   it("mengisi status kosong saat data tidak berbentuk objek", () => {
     expect(petakanHasilBatal(null)).toEqual({ status: "" });
+  });
+});
+
+// Bentuk jsonb yang benar-benar dikembalikan create_manual_order.
+const CONTOH_HASIL_ORDER_MANUAL = {
+  order_id: "11111111-1111-4111-8111-111111111111",
+  status: "antrean",
+  queue_number: 7,
+  stock_warnings: [],
+};
+
+describe("petakanOrderManual", () => {
+  it("mengubah nama field snake_case menjadi camelCase", () => {
+    expect(petakanOrderManual(CONTOH_HASIL_ORDER_MANUAL)).toEqual({
+      orderId: "11111111-1111-4111-8111-111111111111",
+      queueNumber: 7,
+      // Order manual LANGSUNG antrean, tanpa tahap Menunggu konfirmasi.
+      status: "antrean",
+      stockWarnings: [],
+    });
+  });
+
+  it("memetakan stock_warnings seperti pada konfirmasi", () => {
+    // Order manual juga mengurangi stok, jadi peringatan stoknya sama bentuknya.
+    const hasil = petakanOrderManual({
+      ...CONTOH_HASIL_ORDER_MANUAL,
+      stock_warnings: [
+        { ingredient_id: "x", ingredient_name: "Susu", stock_after: -5 },
+      ],
+    });
+
+    expect(hasil.stockWarnings).toEqual([
+      { ingredientName: "Susu", stockAfter: -5 },
+    ]);
+  });
+
+  it("TIDAK mengirim queueDate", () => {
+    // Nomor antrean order manual selalu untuk hari ini, jadi tidak ada
+    // queueDate di keluaran (bandingkan dengan petakanHasilBuatOrder).
+    const hasil = petakanOrderManual(CONTOH_HASIL_ORDER_MANUAL);
+
+    expect(hasil).not.toHaveProperty("queueDate");
+    expect(Object.keys(hasil).sort()).toEqual([
+      "orderId",
+      "queueNumber",
+      "status",
+      "stockWarnings",
+    ]);
+  });
+
+  it("mengisi nilai netral saat data tidak berbentuk objek", () => {
+    expect(petakanOrderManual(null)).toEqual({
+      orderId: "",
+      queueNumber: 0,
+      status: "",
+      stockWarnings: [],
+    });
+  });
+
+  it("menghasilkan daftar peringatan kosong saat stock_warnings tidak ada", () => {
+    const hasil = petakanOrderManual({ order_id: "abc", queue_number: 1 });
+    expect(hasil.stockWarnings).toEqual([]);
   });
 });

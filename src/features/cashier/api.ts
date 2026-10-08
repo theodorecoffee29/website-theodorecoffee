@@ -14,6 +14,28 @@
 // Metode bayar yang hanya ada dua (docs/api-contract.md bagian 2).
 export type MetodeBayar = "qris" | "tunai";
 
+// Satu item menu dari /api/menu.
+//
+// available false berarti tampil "Habis" dan tidak bisa dipilih (menu bahannya
+// tidak cukup untuk satu porsi).
+export type ItemMenu = {
+  id: string;
+  name: string;
+  price: number;
+  available: boolean;
+};
+
+// Hasil POST /api/cashier/orders (order manual).
+export type HasilOrderManualApi = {
+  orderId: string;
+  queueNumber: number;
+  // Selalu "antrean" untuk order manual.
+  status: string;
+  // Peringatan stok (bukan error). Kalau tidak kosong, Cashier perlu diberi
+  // tahu nama bahan dan sisa stoknya.
+  stockWarnings: PeringatanStokApi[];
+};
+
 // Satu item dalam pesanan, sesuai keluaran GET /api/cashier/orders.
 export type ItemPesanan = {
   name: string;
@@ -44,6 +66,12 @@ export type PesananCashier = {
   // Waktu pesanan dibuat, dalam format timestamptz database (misalnya
   // "2026-10-08T09:15:00+07:00"). Jamnya ditampilkan dalam WIB.
   createdAt: string;
+  // Waktu kejadian pesanan. Untuk order manual yang diinput belakangan, ini bisa
+  // lebih lama daripada createdAt.
+  occurredAt: string;
+  // true kalau occurredAt diisi manual (input dari catatan kertas). Cashier perlu
+  // tahu ini supaya tidak bingung kenapa jamnya berbeda dari jam input.
+  isManualTime: boolean;
   confirmedAt: string | null;
   items: ItemPesanan[];
   payment: Pembayaran | null;
@@ -150,6 +178,70 @@ export type GagalApi = {
 // Hasil pemanggilan API: sukses atau gagal. Tidak pernah melempar error.
 export type HasilApi<T> =
   { berhasil: true; data: T } | { berhasil: false; error: GagalApi };
+
+/**
+ * Mengambil daftar menu dari /api/menu.
+ *
+ * Output: HasilApi berisi array menu, atau GagalApi.
+ *
+ * Dipakai form order manual supaya Cashier bisa memilih menu yang mau dipesan
+ * customer di depan kasir. Menu yang bahannya tidak cukup tampil dengan
+ * available = false ("Habis") dan tidak bisa dipilih.
+ */
+export async function ambilMenu(): Promise<HasilApi<ItemMenu[]>> {
+  // getMenu() mengembalikan { items: [...] }.
+  const hasil = await panggilApi<{ items: ItemMenu[] }>("/api/menu", {
+    method: "GET",
+  });
+
+  if (!hasil.berhasil) {
+    return hasil;
+  }
+
+  // Kalau items bukan array (mis. server berubah), anggap menu kosong.
+  return {
+    berhasil: true,
+    data: Array.isArray(hasil.data.items) ? hasil.data.items : [],
+  };
+}
+
+/**
+ * Mengirim order manual ke /api/cashier/orders.
+ *
+ * Input: nama customer, item yang dipilih, metode bayar, idempotencyKey, dan
+ *        occurredAt (opsional, hanya untuk input_manual).
+ * Output: HasilApi berisi { orderId, queueNumber, status, stockWarnings }, atau
+ *         GagalApi.
+ *
+ * PENTING: tidak ada harga atau total yang dikirim. Server menghitung ulang
+ * harga dari menu_items (docs/api-contract.md bagian 2).
+ *
+ * idempotencyKey dibuat satu kali per percobaan dan dipakai ulang kalau
+ * pengiriman gagal lalu dicoba lagi. Gunanya: kalau pengiriman sebenarnya
+ * sampai server tapi responsnya hilang (mis. internet putus sesaat), percobaan
+ * ulang tidak akan membuat order kedua.
+ */
+export async function kirimOrderManual(params: {
+  customerName: string;
+  items: { menuItemId: string; qty: number; note?: string }[];
+  paymentMethod: MetodeBayar;
+  idempotencyKey: string;
+  occurredAt?: string;
+}): Promise<HasilApi<HasilOrderManualApi>> {
+  return panggilApi("/api/cashier/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      customerName: params.customerName,
+      items: params.items,
+      paymentMethod: params.paymentMethod,
+      idempotencyKey: params.idempotencyKey,
+      // occurredAt hanya ikut kalau ada. Kalau tidak, server memakai waktu
+      // sekarang dan menandai order itu bukan input manual.
+      ...(params.occurredAt ? { occurredAt: params.occurredAt } : {}),
+    }),
+  });
+}
 
 /**
  * Melaporkan error penting dari browser ke /api/log-error.

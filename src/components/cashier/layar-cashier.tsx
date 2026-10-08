@@ -9,15 +9,21 @@
 
 import { KartuPesanan } from "./kartu-pesanan";
 import { DialogBatal } from "./dialog-batal";
+import { FormOrderManual } from "./form-order-manual";
+import { DialogRingkas } from "./dialog-ringkas";
 import { teksCashier } from "@/features/cashier/teks";
 import type {
   KeadaanCashier,
   PesananTampil,
 } from "@/features/cashier/use-daftar-pesanan";
+import type { KeadaanFormManual } from "@/features/cashier/use-form-manual";
 
-// Props layar Cashier. Semuanya berasal dari hook useDaftarPesanan.
+// Props layar Cashier. Semuanya berasal dari hook useDaftarPesanan dan
+// useFormOrderManual.
 export type PropsLayarCashier = {
   keadaan: KeadaanCashier;
+  // Keadaan form order manual (bagian atas halaman).
+  formManual: KeadaanFormManual;
   // Nama akun Cashier yang sedang login (untuk ditampilkan di header).
   namaAkun: string;
   // Aksi keluar. Dipanggil dari form di komponen ini.
@@ -27,10 +33,15 @@ export type PropsLayarCashier = {
 /**
  * Menampilkan seluruh isi layar Cashier.
  *
- * Input: keadaan dari hook, nama akun, dan aksi keluar.
+ * Input: keadaan dari hook, keadaan form manual, nama akun, dan aksi keluar.
  * Output: elemen React.
  */
-export function LayarCashier({ keadaan, namaAkun, keluar }: PropsLayarCashier) {
+export function LayarCashier({
+  keadaan,
+  formManual,
+  namaAkun,
+  keluar,
+}: PropsLayarCashier) {
   // Pesanan yang jadi popup pembatalannya sedang terbuka, kalau ada.
   const pesananSedangDibatalkan =
     keadaan.dialogBatalUntuk !== null
@@ -126,7 +137,11 @@ export function LayarCashier({ keadaan, namaAkun, keluar }: PropsLayarCashier) {
           </p>
         ) : null}
 
-        {/* Kelompok (a): Menunggu konfirmasi. Paling atas dan diberi penanda. */}
+        {/* Form order manual. Di atas daftar pesanan, karena dipakai untuk
+            pesanan yang sedang dilayani (docs/Order-flow.md bagian 4). */}
+        <FormOrderManual keadaan={formManual} />
+
+        {/* Daftar pesanan hari ini (tiga kelompok). */}
         <BagianKelompok
           judul={teksCashier.kelompok.menunggu}
           keterangan={teksCashier.kelompok.keteranganMenunggu}
@@ -205,6 +220,12 @@ export function LayarCashier({ keadaan, namaAkun, keluar }: PropsLayarCashier) {
           ))}
         </BagianKelompok>
       </div>
+
+      {/* Dialog ringkasan order manual, hanya tampil kalau tombol
+          "Periksa dan simpan" ditekan. */}
+      {formManual.dialogRingkasTerbuka ? (
+        <DialogRingkas keadaan={formManual} />
+      ) : null}
 
       {/* Popup konfirmasi pembatalan, hanya tampil kalau ada pesanan yang
           dipilih. */}

@@ -80,6 +80,16 @@ export function KartuPesanan({
         </p>
       ) : null}
 
+      {/* Label untuk order yang diinput dari catatan kertas (waktu manual).
+          Cashier perlu tahu ini supaya tidak bingung kenapa jamnya berbeda dari
+          jam dia mengetik. Jam yang ditampilkan adalah jam KEJADIAN order
+          (docs/Order-flow.md bagian 5). */}
+      {pesanan.waktuManual ? (
+        <p className="mt-1 text-xs text-gray-600">
+          {teksCashier.orderWaktuManual}: {pesanan.jamKejadian} WIB
+        </p>
+      ) : null}
+
       {/* Status dan metode bayar (kalau sudah ada). */}
       <p className="mt-2 text-sm text-gray-700">
         {teksCashier.order.labelStatus}: {pesanan.teksStatus}

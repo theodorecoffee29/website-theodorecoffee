@@ -14,6 +14,7 @@
 import { useEffect } from "react";
 import { LayarCashier } from "./layar-cashier";
 import { useDaftarPesanan } from "@/features/cashier/use-daftar-pesanan";
+import { useFormOrderManual } from "@/features/cashier/use-form-manual";
 import { teksCashier } from "@/features/cashier/teks";
 
 // Props dari halaman server.
@@ -37,6 +38,10 @@ export function LayarCashierClient({
 }: PropsLayarCashierClient) {
   const keadaan = useDaftarPesanan();
 
+  // Form order manual. Setelah pesanan manual berhasil disimpan, daftar pesanan
+  // dimuat ulang supaya pesanan baru itu langsung terlihat di bawah form.
+  const formManual = useFormOrderManual(keadaan.segarkanDaftar);
+
   // Judul tab browser: menampilkan jumlah pesanan yang menunggu konfirmasi,
   // supaya Cashier tahu ada pesanan baru bahkan tanpa melihat layar
   // (mis. sedang membantu customer di meja sebelah).
@@ -58,5 +63,12 @@ export function LayarCashierClient({
     };
   }, [keadaan.jumlahMenunggu]);
 
-  return <LayarCashier keadaan={keadaan} namaAkun={namaAkun} keluar={keluar} />;
+  return (
+    <LayarCashier
+      keadaan={keadaan}
+      formManual={formManual}
+      namaAkun={namaAkun}
+      keluar={keluar}
+    />
+  );
 }

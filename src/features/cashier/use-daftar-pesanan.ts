@@ -62,6 +62,12 @@ export type PesananTampil = {
   labelAsal: string;
   // Jam dibuat dalam WIB, mis. "09.15".
   jamDibuat: string;
+  // Jam kejadian dalam WIB (untuk order manual yang diinput belakangan, ini bisa
+  // lebih lama dari jamDibuat). Kosong kalau waktunya tidak terbaca.
+  jamKejadian: string;
+  // true kalau pesanan ini diinput dari catatan kertas (waktu manual). Cashier
+  // perlu tahu ini supaya tidak bingung kenapa jamnya berbeda.
+  waktuManual: boolean;
   items: {
     nama: string;
     jumlah: number;
@@ -113,6 +119,10 @@ export type KeadaanCashier = {
   sudahKonfirmasiBatal: () => void;
   tutupSpanduk: () => void;
   tutupPeringatanStok: () => void;
+  // Muat ulang daftar pesanan sekali saja. Dipanggil setelah order manual
+  // berhasil disimpan, supaya pesanan baru langsung terlihat tanpa menunggu
+  // jeda polling.
+  segarkanDaftar: () => void;
 };
 
 /**
@@ -447,6 +457,18 @@ export function useDaftarPesanan(): KeadaanCashier {
     setPeringatanStok([]);
   }
 
+  /**
+   * Memuat ulang daftar pesanan sekali saja.
+   *
+   * Output: void.
+   *
+   * Dipanggil setelah order manual berhasil disimpan, supaya pesanan baru itu
+   * langsung terlihat tanpa harus menunggu jeda polling 3 detik.
+   */
+  function segarkanDaftar(): void {
+    void muatDaftar();
+  }
+
   // Kelompokkan pesanan. Pengelompokan hanya butuh field ringkas, tapi kita
   // tetap menyimpan pesanan UTUH per kelompok supaya item, total, dan pembayaran
   // tidak ikut hilang saat dipetakan ke bentuk tampilan.
@@ -491,6 +513,7 @@ export function useDaftarPesanan(): KeadaanCashier {
     },
     tutupSpanduk: tutupSpanduk,
     tutupPeringatanStok: tutupPeringatanStok,
+    segarkanDaftar: segarkanDaftar,
   };
 }
 
@@ -554,6 +577,8 @@ function kePesananCashier(ringkas: PesananRingkas): PesananCashier {
     status: ringkas.status,
     total: 0,
     createdAt: ringkas.createdAt,
+    occurredAt: ringkas.createdAt,
+    isManualTime: false,
     confirmedAt: null,
     items: [],
     payment: null,
@@ -584,6 +609,10 @@ function siapkanUntukTampil(
     // diurutkan ke akhir, tidak dibuang). Kalau ternyata tidak terbaca, jamWib
     // mengembalikan string kosong supaya tidak tampil "Invalid Date".
     jamDibuat: jamWib(lengkap.createdAt),
+    // Waktu kejadian. Untuk order manual yang diinput belakangan, ini yang perlu
+    // dilihat Cashier, bukan jamDibuat.
+    jamKejadian: jamWib(lengkap.occurredAt),
+    waktuManual: lengkap.isManualTime,
     items: lengkap.items.map((satuItem) => ({
       nama: satuItem.name,
       jumlah: satuItem.qty,

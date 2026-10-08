@@ -12,6 +12,7 @@
 // browser, supaya konsisten di semua route handler:
 //
 //   petakanHasilBuatOrder    -> POST  /api/orders
+//   petakanOrderManual       -> POST  /api/cashier/orders (order manual)
 //   petakanHasilStatusOrder  -> GET   /api/orders/[id]/status
 //   petakanHasilMenu         -> GET   /api/menu
 //   petakanHasilKonfirmasi   -> POST  /api/cashier/orders/[id]/confirm
@@ -72,6 +73,20 @@ export type PeringatanStok = {
   stockAfter: number;
 };
 
+// Hasil POST /api/cashier/orders (fungsi create_manual_order).
+//
+// Perbedaan dari HasilBuatOrder: order manual LANGSUNG berstatus "antrean"
+// (tidak ada tahap Menunggu konfirmasi), dan tidak ada queueDate karena nomor
+// antrean selalu untuk hari ini (docs/Order-flow.md bagian 3).
+export type HasilOrderManual = {
+  orderId: string;
+  queueNumber: number;
+  // Selalu "antrean" untuk order manual.
+  status: string;
+  // Peringatan stok (bukan error). Sama bentuknya dengan konfirmasi.
+  stockWarnings: PeringatanStok[];
+};
+
 // Hasil POST /api/cashier/orders/[id]/confirm (fungsi confirm_order).
 export type HasilKonfirmasi = {
   status: string;
@@ -107,6 +122,28 @@ export function petakanHasilBuatOrder(data: unknown): HasilBuatOrder {
     queueDate: jadiTeks(kolom.queue_date),
     status: jadiTeks(kolom.status),
     total: jadiAngka(kolom.total),
+  };
+}
+
+/**
+ * Mengubah hasil create_manual_order (snake_case) menjadi bentuk camelCase.
+ *
+ * Input: data apa pun hasil pemanggilan fungsi create_manual_order.
+ * Output: HasilOrderManual.
+ *
+ * Perbedaan dari petakanHasilBuatOrder: field queueDate tidak ada di sini,
+ * karena nomor antrean order manual selalu untuk hari ini (dihitung database).
+ * Field stockWarnings tetap diteruskan, karena order manual juga mengurangi
+ * stok dan bisa memunculkan peringatan stok yang sama seperti konfirmasi.
+ */
+export function petakanOrderManual(data: unknown): HasilOrderManual {
+  const kolom = jadiObjek(data);
+
+  return {
+    orderId: jadiTeks(kolom.order_id),
+    queueNumber: jadiAngka(kolom.queue_number),
+    status: jadiTeks(kolom.status),
+    stockWarnings: petakanPeringatanStok(kolom.stock_warnings),
   };
 }
 
