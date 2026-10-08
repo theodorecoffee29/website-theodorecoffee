@@ -62,7 +62,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 | `log_client_error` | Anonim dan staf (dibatasi) | Catat error penting dari browser (`/api/log-error`) |
 
 **Ringkas saja (detail ditulis saat fasenya):**
-- **Admin, menu dan stok:** `create_menu_item`, `update_menu_item`, `set_menu_active`, `set_recipe`, `create_ingredient`, `restock_ingredient`, `adjust_stock`
+- **Admin, menu, resep, dan stok:** detail di bagian 4b
 - **Admin, akun:** `create_account`, `update_account`, `deactivate_account`, `reset_password`
 - **Admin, log:** `list_activity_logs`, `list_error_logs`
 - **Cashier dan Admin, laporan:** `get_today_report`, `list_reports`, `get_report`
@@ -82,7 +82,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 - **Catatan:** kalau `idempotencyKey` sudah pernah dipakai, kembalikan order yang sama (bukan error), sehingga klik ganda tidak membuat order ganda. Setelah berhasil, browser menyimpan `orderId` untuk halaman status.
 
 ### get_order_status (customer)
-- **Input:** `{ orderId }`
+- **Input:** `{ orderId }`. Di database, parameternya `p_order_id` bertipe **text** (bukan uuid), supaya ID yang tidak valid menghasilkan `ORDER_NOT_FOUND`, bukan error konversi tipe.
 - **Output:** `{ status, queueNumber, queueDate, items: [{ name, qty, note }], total }`
 - **Error:** `ORDER_NOT_FOUND` (juga dipakai untuk ID yang tidak valid), `RATE_LIMITED`
 - Dipanggil berulang (polling) sampai status akhir
@@ -123,6 +123,28 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 - **Output:** `{ status: "dikerjakan" }` untuk `start_order`, `{ status: "selesai" }` untuk `finish_order`
 - **Efek:** update bersyarat (`antrean` → `dikerjakan`, `dikerjakan` → `selesai`), log `order.started` atau `order.finished`
 - **Error:** `ORDER_NOT_FOUND`, `ORDER_STATUS_CHANGED` (misalnya Barista lain sudah menekan lebih dulu), `FORBIDDEN`
+
+## 4b. Detail fungsi Admin: menu, resep, dan stok
+
+Semua fungsi hanya untuk **admin**. Server mengirim `p_actor_id`, dan database memeriksa bahwa akunnya admin dan aktif (peran dari tabel `profiles`, bukan dari klien). Id memakai tipe text, kembalian jsonb camelCase. Kesalahan memakai jenis error yang sudah ada: `FORBIDDEN`, dan `VALIDATION_FAILED` dengan detail penyebabnya (misalnya nama sudah dipakai atau id tidak ditemukan).
+
+| Fungsi | Input | Aturan | Log |
+|---|---|---|---|
+| `create_menu_item` | `name`, `price` | Nama 1-60 karakter setelah dipangkas, unik tanpa membedakan huruf besar/kecil. Harga bilangan bulat 1-10.000.000. Menu baru langsung aktif. | `menu.created` |
+| `update_menu_item` | `menuItemId`, `name`, `price` | Aturan sama. Harga baru tidak mengubah order lama (harga sudah disalin di `order_items`). | `menu.updated` (before/after) |
+| `set_menu_active` | `menuItemId`, `isActive` | Menu tidak pernah dihapus, hanya dinonaktifkan atau diaktifkan lagi. | `menu.deactivated`, atau `menu.updated` saat diaktifkan lagi |
+| `set_recipe` | `menuItemId`, `lines: [{ ingredientId, qtyPerPortion }]` | Mengganti seluruh resep dalam satu transaksi. 0-20 baris, bahan tidak boleh ganda dan harus ada, `qtyPerPortion` lebih dari 0 (`numeric(12,3)`). Resep kosong diizinkan (menu dianggap selalu tersedia). | `recipe.updated` (before/after) |
+| `create_ingredient` | `name`, `unit` (`g`/`ml`/`pcs`), `initialStock?` | Nama 1-60 karakter, unik tanpa membedakan huruf besar/kecil. `initialStock` 0 atau lebih (bawaan 0). Kalau lebih dari 0, dicatat sebagai pergerakan stok bertipe `restock`. | `ingredient.created`, plus `stock.restocked` kalau ada stok awal |
+| `update_ingredient` | `ingredientId`, `name` | Hanya nama. **Satuan tidak bisa diubah** setelah bahan dibuat, karena mengubahnya merusak arti angka stok dan resep. | `ingredient.updated` |
+| `restock_ingredient` | `ingredientId`, `qty`, `note?` | `qty` lebih dari 0. Catatan maksimal 100 karakter. Pergerakan bertipe `restock`. | `stock.restocked` |
+| `adjust_stock` | `ingredientId`, `newQty`, `reason` | Koreksi ke jumlah hasil hitung fisik. `newQty` 0 atau lebih, alasan wajib 1-100 karakter. Pergerakan bertipe `adjustment` berisi selisihnya (positif atau negatif). Stok yang minus dikoreksi kembali ke angka sebenarnya lewat fungsi ini. | `stock.adjusted` (dengan alasan) |
+
+Semua fungsi yang mengubah stok mengunci baris bahan (`for update`) dan mengisi `stock_after` di `stock_movements`.
+
+**Bacaan Admin (route server, tanpa fungsi database baru):**
+- `GET /api/admin/menu`: semua menu termasuk yang nonaktif, beserta baris resepnya
+- `GET /api/admin/ingredients`: nama, satuan, dan stok (stok minus ditandai)
+- `GET /api/admin/ingredients/[id]/movements`: riwayat pergerakan stok, terbaru dulu, maksimal 100
 
 ## 5. Polling (pembaruan layar)
 

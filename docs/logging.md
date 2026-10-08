@@ -22,7 +22,7 @@ Nama aksi memakai format `kelompok.kejadian`, huruf kecil.
 | Order | `order.created`, `order.confirmed`, `order.cancelled`, `order.started`, `order.finished` |
 | Pembayaran | `payment.recorded` (metode, nominal, siapa), `payment.voided` (dibatalkan bersama order) |
 | Stok | `stock.deducted` (otomatis saat konfirmasi), `stock.restored` (dikembalikan saat pembatalan), `stock.restocked`, `stock.adjusted`, `stock.negative` (peringatan stok minus) |
-| Menu dan resep | `menu.created`, `menu.updated`, `menu.deactivated`, `recipe.updated` |
+| Menu, resep, dan bahan | `menu.created`, `menu.updated`, `menu.deactivated`, `recipe.updated`, `ingredient.created`, `ingredient.updated` |
 | Akun | `account.created`, `account.updated`, `account.deactivated`, `account.password_reset` |
 | Login | `auth.login`, `auth.login_failed`, `auth.logout`, `access.denied` (mencoba membuka yang bukan haknya) |
 | Laporan | `report.saved` (otomatis tiap pergantian hari), `report.printed` |
