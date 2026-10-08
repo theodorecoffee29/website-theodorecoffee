@@ -1,21 +1,24 @@
-// File ini: halaman sementara untuk Barista (/barista).
+// File ini: halaman Barista (/barista).
 //
-// Halaman ini belum punya fitur apa pun. Yang ada hanya:
+// Halaman ini TIPIS, sesuai aturan di AGENTS.md bagian "Tampilan": isinya hanya
+// merakit hook (yang di dalam komponen LayarBaristaClient) dan komponen
+// tampilan. Semua logika ada di src/features/barista/.
+//
+// Yang tetap ada dari tugas sebelumnya (tugas 2.7):
 //   1. Penjagaan akses di sisi server lewat wajibPeran("/barista"). Wajib,
 //      karena hanya Barista yang boleh membuka halaman ini
 //      (docs/pemissions.md bagian 2). Cashier dan Admin tidak, termasuk Admin
 //      yang tidak memakai tombol Mulai dan Selesai.
-//   2. Judul peran, nama akun, dan tombol keluar.
+//   2. Server Action keluar (logoutAction).
 //
 // Pengecekan peran dilakukan DI SINI, di server, bukan hanya di src/proxy.ts.
-// Proxy hanya pengarah; penjagaan yang sesungguhnya ada di baris pertama halaman.
-//
-// Catatan tampilan: layar Barista nanti sengaja TIDAK boleh memuat harga dan
-// data pembayaran (docs/pemissions.md bagian 2). Untuk sekarang belum ada data
-// apa pun, jadi aman.
+// proxy.ts hanya pengarah; penjagaan yang sesungguhnya ada di baris pertama
+// halaman. Karena penjagaan terjadi sebelum return, kode di bawahnya tidak
+// pernah ikut dijalankan untuk orang yang tidak berhak.
 
-import PanelPeran from "@/components/panel-peran";
+import { LayarBaristaClient } from "@/components/barista/layar-barista-client";
 import { wajibPeran } from "@/lib/auth/session";
+import { logoutAction } from "@/app/login/actions";
 
 export default async function HalamanBarista() {
   // Penjaga utama. Kalau pengguna bukan Barista, fungsi ini mengarahkan ke
@@ -23,5 +26,12 @@ export default async function HalamanBarista() {
   // untuk orang yang tidak berhak.
   const sesi = await wajibPeran("/barista");
 
-  return <PanelPeran sesi={sesi} path="/barista" />;
+  return (
+    <LayarBaristaClient
+      namaAkun={sesi.name}
+      // Server Action keluar diteruskan sebagai prop supaya tombol Keluar di
+      // komponen tampilan bisa memakainya. Cookie sesi dihapus di server.
+      keluar={logoutAction}
+    />
+  );
 }
