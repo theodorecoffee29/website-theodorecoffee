@@ -20,6 +20,7 @@ import {
   BATASAN_ENDPOINT,
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
+import { petakanHasilMenu } from "@/lib/server/petakan-hasil-fungsi";
 
 // Route ini tidak boleh di-cache, supaya daftar menu selalu terbaru.
 export const dynamic = "force-dynamic";
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     return balasDariErrorDatabase(error, "get_menu");
   }
 
-  // Data dari fungsi sudah berbentuk { items: [...] }.
-  return balasOk(data);
+  // Sukses. Hasil fungsi database dipetakan ke bentuk camelCase yang dijamin
+  // lengkap (docs/api-contract.md bagian 4), sama seperti route lainnya.
+  return balasOk(petakanHasilMenu(data));
 }

@@ -23,6 +23,7 @@ import {
   BATASAN_ENDPOINT,
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
+import { petakanHasilBatal } from "@/lib/server/petakan-hasil-fungsi";
 import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
@@ -80,5 +81,7 @@ export async function POST(
     return balasDariErrorDatabase(error, "cancel_order (customer)");
   }
 
-  return balasOk(data);
+  // Sukses. Hasil fungsi database dipetakan ke bentuk camelCase
+  // (docs/api-contract.md bagian 4) supaya semua route konsisten.
+  return balasOk(petakanHasilBatal(data));
 }

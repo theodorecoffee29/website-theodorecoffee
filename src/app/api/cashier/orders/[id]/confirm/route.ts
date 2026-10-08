@@ -23,6 +23,7 @@ import {
 } from "@/lib/server/balas";
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
 import { konfirmasiOrderSchema } from "@/lib/server/validasi";
+import { petakanHasilKonfirmasi } from "@/lib/server/petakan-hasil-fungsi";
 import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,11 @@ export async function POST(
     return balasDariErrorDatabase(error, "confirm_order");
   }
 
-  // 6. Sukses (status 200). stock_warnings ikut di dalam data.
-  return balasOk(data);
+  // 6. Sukses (status 200).
+  //    Fungsi database mengembalikan nama field snake_case (queue_number,
+  //    stock_warnings), sedangkan docs/api-contract.md bagian 4 menetapkan
+  //    keluaran camelCase (queueNumber, stockWarnings). Jadi hasilnya dipetakan
+  //    dulu. stock_warnings yang kosong tetap dikirim sebagai array kosong, bukan
+  //    dihilangkan, supaya browser selalu tahu bentuknya.
+  return balasOk(petakanHasilKonfirmasi(data));
 }

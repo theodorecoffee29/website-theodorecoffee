@@ -19,7 +19,7 @@ import {
   balasValidasiGagal,
 } from "@/lib/server/balas";
 import { buatOrderSchema } from "@/lib/server/validasi";
-import { petakanHasilBuatOrder } from "@/lib/server/petakan-buat-order";
+import { petakanHasilBuatOrder } from "@/lib/server/petakan-hasil-fungsi";
 import {
   periksaPembatas,
   BATASAN_ENDPOINT,

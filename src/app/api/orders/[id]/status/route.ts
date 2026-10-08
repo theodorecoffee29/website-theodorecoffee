@@ -21,6 +21,7 @@ import {
   BATASAN_ENDPOINT,
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
+import { petakanHasilStatusOrder } from "@/lib/server/petakan-hasil-fungsi";
 import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
@@ -74,5 +75,8 @@ export async function GET(
     return balasDariErrorDatabase(error, "get_order_status");
   }
 
-  return balasOk(data);
+  // Sukses. Fungsi database mengembalikan nama field snake_case (queue_number,
+  // queue_date), sedangkan docs/api-contract.md bagian 4 menetapkan keluaran
+  // camelCase (queueNumber, queueDate). Jadi hasilnya dipetakan dulu.
+  return balasOk(petakanHasilStatusOrder(data));
 }

@@ -18,6 +18,7 @@ import {
   balasOrderTidakDitemukan,
 } from "@/lib/server/balas";
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
+import { petakanHasilSelesai } from "@/lib/server/petakan-hasil-fungsi";
 import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
@@ -61,5 +62,7 @@ export async function POST(
     return balasDariErrorDatabase(error, "finish_order");
   }
 
-  return balasOk(data);
+  // Sukses. Hasil fungsi database dipetakan ke bentuk camelCase
+  // (docs/api-contract.md bagian 4) supaya semua route konsisten.
+  return balasOk(petakanHasilSelesai(data));
 }
