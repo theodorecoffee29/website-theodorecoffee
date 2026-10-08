@@ -14,12 +14,14 @@ import {
   balasDariErrorDatabase,
   balasGagal,
   balasOk,
+  balasOrderTidakDitemukan,
 } from "@/lib/server/balas";
 import {
   periksaPembatas,
   BATASAN_ENDPOINT,
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
+import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +32,9 @@ export const dynamic = "force-dynamic";
  * Output: { ok: true, data: { status, queueNumber, queueDate, items, total } }
  *         atau { ok: false, error } kalau order tidak ada.
  *
- * Catatan: kalau id-nya bukan uuid, fungsi get_order_status mengembalikan
- * ORDER_NOT_FOUND (bukan error database mentah), sesuai api-contract bagian 4.
+ * Catatan: id yang bukan uuid ditolak di sini (balasOrderTidakDitemukan) sebelum
+ * memanggil database. Jadi fungsi get_order_status hanya dipanggil dengan id
+ * yang bentuknya sudah benar.
  */
 export async function GET(
   request: NextRequest,
@@ -54,6 +57,14 @@ export async function GET(
 
   // Di Next.js 15 ke atas, params harus di-await.
   const { id } = await params;
+
+  // Id yang bukan uuid ditolak lebih dulu, SEBELUM memanggil database. Id yang
+  // bukan uuid tidak mungkin ada, jadi jawabannya sama dengan order yang tidak
+  // ditemukan. Database tidak disentuh dan error_logs tidak ditulis, karena ini
+  // bukan kegagalan sistem.
+  if (!apakahUuidValid(id)) {
+    return balasOrderTidakDitemukan();
+  }
 
   const { data, error } = await getAdminClient().rpc("get_order_status", {
     p_order_id: id,

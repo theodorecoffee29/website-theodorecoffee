@@ -17,6 +17,7 @@ import {
   type MenuItem,
 } from "./api";
 import { tambahOrderAktif } from "./penyimpan-order";
+import { apakahUuidValid } from "@/lib/uuid";
 import {
   bolehKirim,
   hitungTotal,
@@ -265,7 +266,26 @@ export function useFormPesan(): KeadaanFormPesan {
       return;
     }
 
-    // Berhasil. Simpan id order DAN nama customer di localStorage supaya halaman
+    // Berhasil. Sebelum menyimpan atau memakai id order, pastikan bentuknya
+    // uuid yang valid. Kalau tidak (mis. server mengirim data rusak), jangan
+    // disimpan dan jangan dibuka; tampilkan error biasa supaya pengguna bisa
+    // mencoba lagi.
+    if (!apakahUuidValid(hasil.data.orderId)) {
+      setSedangMengirim(false);
+      setPesanError(teksCustomer.formPesan.pesanGagalKirim);
+
+      // Laporkan ke server supaya Admin tahu ada bug di balasan /api/orders.
+      void kirimLogErrorKeServer(
+        "gagal_kirim_order",
+        "Server mengirim orderId yang bukan uuid: " +
+          String(hasil.data.orderId),
+      );
+
+      // idempotencyKey dipertahankan supaya coba ulang tidak membuat duplikat.
+      return;
+    }
+
+    // Simpan id order DAN nama customer di localStorage supaya halaman
     // awal bisa menawarkannya lagi dan halaman status bisa menampilkan nama.
     // (get_order_status tidak mengirim nama, lihat penyimpan-order.ts)
     tambahOrderAktif(hasil.data.orderId, customerName.trim());

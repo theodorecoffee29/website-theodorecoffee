@@ -18,10 +18,12 @@ import {
   balasDariErrorDatabase,
   balasGagal,
   balasOk,
+  balasOrderTidakDitemukan,
   balasValidasiGagal,
 } from "@/lib/server/balas";
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
 import { konfirmasiOrderSchema } from "@/lib/server/validasi";
+import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +47,13 @@ export async function POST(
   // 2. Ambil id order dari alamat.
   const { id } = await params;
 
-  // 3. Validasi body (metode bayar harus qris atau tunai).
+  // 3. Id yang bukan uuid ditolak sebelum menyentuh database (bukan kegagalan
+  //    sistem, jadi tidak dicatat di error_logs).
+  if (!apakahUuidValid(id)) {
+    return balasOrderTidakDitemukan();
+  }
+
+  // 4. Validasi body (metode bayar harus qris atau tunai).
   let body: unknown;
   try {
     body = await request.json();
@@ -61,7 +69,7 @@ export async function POST(
     return balasValidasiGagal(hasilValidasi.error.issues);
   }
 
-  // 4. Panggil fungsi database confirm_order.
+  // 5. Panggil fungsi database confirm_order.
   //    p_actor_id: id staf yang mengonfirmasi. p_meta: session_id kalau ada.
   const { data, error } = await getAdminClient().rpc("confirm_order", {
     p_order_id: id,
@@ -77,6 +85,6 @@ export async function POST(
     return balasDariErrorDatabase(error, "confirm_order");
   }
 
-  // 5. Sukses (status 200). stock_warnings ikut di dalam data.
+  // 6. Sukses (status 200). stock_warnings ikut di dalam data.
   return balasOk(data);
 }

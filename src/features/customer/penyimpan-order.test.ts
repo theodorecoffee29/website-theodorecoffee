@@ -4,7 +4,9 @@
 //   - tambah, baca, buang daftar order aktif,
 //   - tahan terhadap localStorage yang error (tidak tersedia / melempar error),
 //   - tahan terhadap isi localStorage yang rusak (bukan JSON, bukan array, isi
-//     campuran).
+//     campuran),
+//   - id yang bukan uuid valid TIDAK pernah disimpan, dan entri semacam itu
+//     dibuang saat membaca (ini penjagaan dari bug "/status/undefined").
 //
 // Tiruan untuk localStorage dibuat sendiri di sini, supaya tes tidak
 // bergantung pada browser sungguhan. Ada dua jenis tiruan: yang normal, dan yang
@@ -22,6 +24,13 @@ import {
   type OrderTersimpan,
   type PenyimpananSederhana,
 } from "./penyimpan-order";
+
+// Id contoh yang berbentuk uuid valid (v4), supaya lolos pemeriksaan bentuk.
+const UUID_1 = "11111111-1111-4111-8111-111111111111";
+const UUID_2 = "22222222-2222-4222-8222-222222222222";
+const UUID_3 = "33333333-3333-4333-8333-333333333333";
+const UUID_4 = "44444444-4444-4444-8444-444444444444";
+const UUID_TIDAK_KENAL = "99999999-9999-4999-8999-999999999999";
 
 // Tiruan localStorage yang bekerja normal, seperti browser.
 function buatPenyimpananNormal(): PenyimpananSederhana & {
@@ -69,61 +78,61 @@ describe("daftar order aktif", () => {
   });
 
   it("menambah satu order dan membacanya kembali", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
     expect(bacaOrderAktif(penyimpanan)).toEqual([
-      { orderId: "order-1", customerName: "Budi" },
+      { orderId: UUID_1, customerName: "Budi" },
     ]);
   });
 
   it("menambah beberapa order dan membacanya kembali", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    tambahOrderAktif("order-2", "Sari", penyimpanan);
-    tambahOrderAktif("order-3", "Dina", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    tambahOrderAktif(UUID_2, "Sari", penyimpanan);
+    tambahOrderAktif(UUID_3, "Dina", penyimpanan);
 
     expect(bacaOrderAktif(penyimpanan)).toEqual([
-      { orderId: "order-1", customerName: "Budi" },
-      { orderId: "order-2", customerName: "Sari" },
-      { orderId: "order-3", customerName: "Dina" },
+      { orderId: UUID_1, customerName: "Budi" },
+      { orderId: UUID_2, customerName: "Sari" },
+      { orderId: UUID_3, customerName: "Dina" },
     ]);
   });
 
   it("tidak menambah order yang sama dua kali", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
     expect(bacaOrderAktif(penyimpanan)).toEqual([
-      { orderId: "order-1", customerName: "Budi" },
+      { orderId: UUID_1, customerName: "Budi" },
     ]);
   });
 
   it("membuang satu order", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    tambahOrderAktif("order-2", "Sari", penyimpanan);
-    buangOrderAktif("order-1", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    tambahOrderAktif(UUID_2, "Sari", penyimpanan);
+    buangOrderAktif(UUID_1, penyimpanan);
 
     expect(bacaOrderAktif(penyimpanan)).toEqual([
-      { orderId: "order-2", customerName: "Sari" },
+      { orderId: UUID_2, customerName: "Sari" },
     ]);
   });
 
   it("membuang order yang tidak ada tanpa merusak daftar", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    buangOrderAktif("tidak-ada", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    buangOrderAktif(UUID_TIDAK_KENAL, penyimpanan);
     expect(bacaOrderAktif(penyimpanan)).toHaveLength(1);
   });
 
   it("menghapus kunci penyimpanan saat daftar jadi kosong", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    buangOrderAktif("order-1", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    buangOrderAktif(UUID_1, penyimpanan);
     // Kuncinya dihapus, bukan diisi "[]".
     expect(penyimpanan.isi.has(KUNCI_PENYIMPANAN_ORDER)).toBe(false);
   });
 
   it("mengganti seluruh daftar sekaligus", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
     gantiOrderAktif(
       [
-        { orderId: "order-a", customerName: "Ana" },
-        { orderId: "order-b", customerName: "Bimo" },
+        { orderId: UUID_3, customerName: "Ana" },
+        { orderId: UUID_4, customerName: "Bimo" },
       ],
       penyimpanan,
     );
@@ -131,10 +140,37 @@ describe("daftar order aktif", () => {
   });
 
   it("mencari nama customer dari daftar tersimpan", () => {
-    tambahOrderAktif("order-1", "Budi", penyimpanan);
-    expect(cariNamaCustomer("order-1", penyimpanan)).toBe("Budi");
+    tambahOrderAktif(UUID_1, "Budi", penyimpanan);
+    expect(cariNamaCustomer(UUID_1, penyimpanan)).toBe("Budi");
     // Order yang tidak ada menghasilkan nama kosong.
-    expect(cariNamaCustomer("tidak-ada", penyimpanan)).toBe("");
+    expect(cariNamaCustomer(UUID_TIDAK_KENAL, penyimpanan)).toBe("");
+  });
+
+  it("tidak menyimpan order id yang bukan uuid valid", () => {
+    // "undefined" adalah id yang dulu bisa terlanjur masuk (penyebab bug
+    // /status/undefined). Id semacam ini tidak boleh tersimpan sama sekali.
+    tambahOrderAktif("undefined", "Budi", penyimpanan);
+    tambahOrderAktif("order-1", "Sari", penyimpanan);
+    tambahOrderAktif("", "Dina", penyimpanan);
+
+    expect(bacaOrderAktif(penyimpanan)).toEqual([]);
+  });
+
+  it("membuang entri yang id-nya bukan uuid valid saat dibaca", () => {
+    // Penyimpanan sudah berisi id rusak (mis. karena versi lama). Saat dibaca,
+    // entri itu harus dilewati dan tidak pernah dipakai.
+    penyimpanan.setItem(
+      KUNCI_PENYIMPANAN_ORDER,
+      JSON.stringify([
+        { orderId: "undefined", customerName: "Budi" },
+        { orderId: UUID_1, customerName: "Sari" },
+        { orderId: "order-2", customerName: "Dina" },
+      ]),
+    );
+
+    expect(bacaOrderAktif(penyimpanan)).toEqual([
+      { orderId: UUID_1, customerName: "Sari" },
+    ]);
   });
 });
 
@@ -147,7 +183,7 @@ describe("tahan terhadap penyimpanan yang error", () => {
   it("tidak melempar error saat menambah ke penyimpanan yang error", () => {
     const rusak = buatPenyimpananError();
     // Tidak harus melempar error, hanya diam-diam tidak tersimpan.
-    expect(() => tambahOrderAktif("order-1", "Budi", rusak)).not.toThrow();
+    expect(() => tambahOrderAktif(UUID_1, "Budi", rusak)).not.toThrow();
   });
 
   it("mengembalikan daftar kosong saat membaca dari penyimpanan yang error", () => {
@@ -156,11 +192,11 @@ describe("tahan terhadap penyimpanan yang error", () => {
 
   it("tidak melempar error saat membuang dari penyimpanan yang error", () => {
     const rusak = buatPenyimpananError();
-    expect(() => buangOrderAktif("order-1", rusak)).not.toThrow();
+    expect(() => buangOrderAktif(UUID_1, rusak)).not.toThrow();
   });
 
   it("tidak melempar error saat menambah ke penyimpanan null", () => {
-    expect(() => tambahOrderAktif("order-1", "Budi", null)).not.toThrow();
+    expect(() => tambahOrderAktif(UUID_1, "Budi", null)).not.toThrow();
   });
 });
 
@@ -183,7 +219,7 @@ describe("tahan terhadap isi localStorage yang rusak", () => {
     expect(bacaOrderAktif(penyimpanan)).toEqual([]);
   });
 
-  it("melewati entri rusak dan mengambil entri yang punya orderId", () => {
+  it("melewati entri rusak dan mengambil entri yang punya orderId valid", () => {
     const penyimpanan = buatPenyimpananNormal();
     // Array mixture: teks biasa, objek tanpa orderId, dan objek yang benar.
     penyimpanan.setItem(
@@ -192,7 +228,7 @@ describe("tahan terhadap isi localStorage yang rusak", () => {
         "bukan objek",
         { tanpaId: true },
         { orderId: "", customerName: "Kosong" },
-        { orderId: "order-1", customerName: "Budi" },
+        { orderId: UUID_1, customerName: "Budi" },
       ]),
     );
 
@@ -200,7 +236,7 @@ describe("tahan terhadap isi localStorage yang rusak", () => {
 
     // Hanya entri dengan orderId yang valid yang diambil.
     expect(hasil).toHaveLength(1);
-    expect(hasil[0].orderId).toBe("order-1");
+    expect(hasil[0].orderId).toBe(UUID_1);
   });
 
   it("mengisi customerName kosong kalau nama tidak tersimpan atau bukan teks", () => {
@@ -208,16 +244,16 @@ describe("tahan terhadap isi localStorage yang rusak", () => {
     penyimpanan.setItem(
       KUNCI_PENYIMPANAN_ORDER,
       JSON.stringify([
-        { orderId: "order-1" },
-        { orderId: "order-2", customerName: 123 },
+        { orderId: UUID_1 },
+        { orderId: UUID_2, customerName: 123 },
       ]),
     );
 
     const hasil = bacaOrderAktif(penyimpanan);
 
     expect(hasil).toEqual([
-      { orderId: "order-1", customerName: "" },
-      { orderId: "order-2", customerName: "" },
+      { orderId: UUID_1, customerName: "" },
+      { orderId: UUID_2, customerName: "" },
     ]);
   });
 });
@@ -225,8 +261,23 @@ describe("tahan terhadap isi localStorage yang rusak", () => {
 describe("tulisOrderAktif langsung", () => {
   it("menulis daftar yang diberikan", () => {
     const penyimpanan = buatPenyimpananNormal();
-    tulisOrderAktif([{ orderId: "a", customerName: "A" }], penyimpanan);
+    tulisOrderAktif([{ orderId: UUID_1, customerName: "A" }], penyimpanan);
     expect(bacaOrderAktif(penyimpanan)).toHaveLength(1);
+  });
+
+  it("membuang entri yang id-nya bukan uuid valid saat menulis", () => {
+    const penyimpanan = buatPenyimpananNormal();
+    tulisOrderAktif(
+      [
+        { orderId: "bukan-uuid", customerName: "Buang" },
+        { orderId: UUID_2, customerName: "Simpan" },
+      ],
+      penyimpanan,
+    );
+    // Hanya entri dengan uuid valid yang tersimpan.
+    expect(bacaOrderAktif(penyimpanan)).toEqual([
+      { orderId: UUID_2, customerName: "Simpan" },
+    ]);
   });
 
   it("tidak melempar error dengan daftar kosong", () => {

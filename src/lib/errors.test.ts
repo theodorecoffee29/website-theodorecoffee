@@ -2,9 +2,30 @@
 // api-contract.md bagian 6 punya 8 tipe error. Error dari database muncul sebagai
 // raise exception dengan message berupa salah satu tipe itu. Kalau message-nya
 // tidak dikenal, hasilnya harus INTERNAL_ERROR.
+//
+// Catatan khusus: supabase mengirim error sebagai OBJEK BIASA
+// { message, code, details, hint } (bukan turunan Error). Tes di bawah memakai
+// objek semacam itu, karena hal inilah yang dulu membuat error tertulis
+// "[object Object]" dan tidak terbaca.
 
 import { describe, expect, it } from "vitest";
-import { ERROR_TYPES, fail, fromDatabaseError, ok } from "./errors";
+import {
+  ERROR_TYPES,
+  ambilDetailError,
+  fail,
+  fromDatabaseError,
+  ok,
+} from "./errors";
+
+// Bentuk error dari supabase-js untuk "raise exception 'ORDER_NOT_FOUND'".
+function errorDatabase(message: string): Record<string, unknown> {
+  return {
+    message: message,
+    code: "P0001",
+    details: "order_id tidak valid",
+    hint: "Periksa kembali id order",
+  };
+}
 
 describe("fromDatabaseError", () => {
   it("mengubah message error database yang dikenal menjadi tipe yang sama", () => {
@@ -61,6 +82,98 @@ describe("fromDatabaseError", () => {
       "RATE_LIMITED",
       "INTERNAL_ERROR",
     ]);
+  });
+});
+
+describe("fromDatabaseError dengan error berbentuk OBJEK supabase", () => {
+  // Ini bagian yang dulu rusak: objek error dari supabase diubah dengan
+  // String(error) menjadi "[object Object]", jadi message-nya tidak terbaca dan
+  // semuanya menjadi INTERNAL_ERROR 500.
+  it("mengenali message dari objek error untuk tiap tipe yang dikenal", () => {
+    for (const tipe of ERROR_TYPES) {
+      const hasil = fromDatabaseError(errorDatabase(tipe));
+      expect(hasil.type).toBe(tipe);
+    }
+  });
+
+  it("mengenali ORDER_NOT_FOUND persis contoh dari laporan bug", () => {
+    // Contoh persis seperti yang muncul dari fungsi get_order_status.
+    const error = {
+      message: "ORDER_NOT_FOUND",
+      code: "P0001",
+      details: "order_id tidak valid",
+      hint: null,
+    };
+
+    const hasil = fromDatabaseError(error);
+
+    expect(hasil.type).toBe("ORDER_NOT_FOUND");
+  });
+
+  it("menganggap message objek yang tidak dikenal sebagai INTERNAL_ERROR", () => {
+    const error = {
+      message: 'relation "orders" does not exist',
+      code: "42P01",
+      details: "Table not found",
+      hint: null,
+    };
+
+    expect(fromDatabaseError(error).type).toBe("INTERNAL_ERROR");
+  });
+
+  it("menangani error yang bukan objek", () => {
+    // Teks biasa, angka, null. Semua bukan tipe dikenal -> INTERNAL_ERROR.
+    expect(fromDatabaseError("ORDER_STATUS_CHANGED").type).toBe(
+      "ORDER_STATUS_CHANGED",
+    );
+    expect(fromDatabaseError(42).type).toBe("INTERNAL_ERROR");
+    expect(fromDatabaseError(null).type).toBe("INTERNAL_ERROR");
+    expect(fromDatabaseError(undefined).type).toBe("INTERNAL_ERROR");
+  });
+});
+
+describe("ambilDetailError", () => {
+  it("membaca message, code, details, dan hint dari objek supabase", () => {
+    const detail = ambilDetailError(errorDatabase("VALIDATION_FAILED"));
+
+    expect(detail).toEqual({
+      message: "VALIDATION_FAILED",
+      code: "P0001",
+      details: "order_id tidak valid",
+      hint: "Periksa kembali id order",
+    });
+  });
+
+  it("mengisi null untuk field objek yang tidak ada atau bukan teks", () => {
+    const detail = ambilDetailError({ message: "MENU_UNAVAILABLE", hint: 42 });
+
+    expect(detail).toEqual({
+      message: "MENU_UNAVAILABLE",
+      code: null,
+      details: null,
+      hint: null,
+    });
+  });
+
+  it("membaca message dari Error biasa", () => {
+    expect(ambilDetailError(new Error("FORBIDDEN")).message).toBe("FORBIDDEN");
+  });
+
+  it("mengubah error yang bukan objek menjadi teks", () => {
+    expect(ambilDetailError("ORDER_NOT_FOUND")).toEqual({
+      message: "ORDER_NOT_FOUND",
+      code: null,
+      details: null,
+      hint: null,
+    });
+
+    // null dan undefined dianggap kosong, bukan "[object Object]".
+    expect(ambilDetailError(null)).toEqual({
+      message: "",
+      code: null,
+      details: null,
+      hint: null,
+    });
   });
 });
 

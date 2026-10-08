@@ -8,6 +8,9 @@ import { defineConfig } from "vitest/config";
 const vitestConfig = defineConfig({
   resolve: {
     alias: {
+      // Alias "@" supaya impor memakai "@/..." (sama seperti tsconfig / Next.js)
+      // juga berfungsi saat diuji.
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
       // Paket "server-only" sengaja melempar error kalau diimpor di luar
       // lingkungan server (untuk menjaga kunci rahasia). Tes berjalan di Node
       // biasa, jadi kalau dibiarkan, menguji file server akan gagal.

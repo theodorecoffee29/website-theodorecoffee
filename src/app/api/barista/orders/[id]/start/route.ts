@@ -15,8 +15,10 @@ import {
   balasDariErrorDatabase,
   balasGagal,
   balasOk,
+  balasOrderTidakDitemukan,
 } from "@/lib/server/balas";
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
+import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,13 @@ export async function POST(
   // 2. Ambil id order dari alamat.
   const { id } = await params;
 
-  // 3. Panggil fungsi database start_order.
+  // 3. Id yang bukan uuid ditolak sebelum menyentuh database (bukan kegagalan
+  //    sistem, jadi tidak dicatat di error_logs).
+  if (!apakahUuidValid(id)) {
+    return balasOrderTidakDitemukan();
+  }
+
+  // 4. Panggil fungsi database start_order.
   //    p_actor_id: id barista yang menekan Mulai. p_meta: session_id kalau ada.
   const { data, error } = await getAdminClient().rpc("start_order", {
     p_order_id: id,

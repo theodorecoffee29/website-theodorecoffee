@@ -23,6 +23,8 @@
 
 export const KUNCI_PENYIMPANAN_ORDER = "theodore-coffee:order-aktif";
 
+import { apakahUuidValid } from "@/lib/uuid";
+
 // Satu order yang tersimpan di HP ini.
 export type OrderTersimpan = {
   orderId: string;
@@ -112,8 +114,10 @@ export function bacaOrderAktif(
 
     const kolom = satuItem as Record<string, unknown>;
     const orderId = kolom.orderId;
-    if (typeof orderId !== "string" || orderId.length === 0) {
-      // Tanpa id yang benar, order ini tidak bisa dipakai. Lewati.
+    // Hanya terima id yang berbentuk uuid valid. Id lain (kosong, teks bebas,
+    // "undefined") tidak mungkin benar, jadi dibuang. Kalau tidak dibuang, id
+    // rusak bisa terlanjur dipakai untuk membuka halaman status.
+    if (!apakahUuidValid(orderId)) {
       continue;
     }
 
@@ -142,15 +146,22 @@ export function tulisOrderAktif(
     return;
   }
 
+  // Jaga-jaga: buang entri yang id-nya bukan uuid valid, supaya id rusak tidak
+  // pernah terlanjur tersimpan (ini pengaman kedua setelah pengecekan di
+  // tambahOrderAktif).
+  const daftarValid = daftarOrder.filter((satuOrder) =>
+    apakahUuidValid(satuOrder.orderId),
+  );
+
   try {
     // Kalau daftarnya kosong, hapus kuncinya saja supaya storage tidak penuh
     // dengan "[]" yang tidak berguna.
-    if (daftarOrder.length === 0) {
+    if (daftarValid.length === 0) {
       penyimpanan.removeItem(KUNCI_PENYIMPANAN_ORDER);
       return;
     }
 
-    penyimpanan.setItem(KUNCI_PENYIMPANAN_ORDER, JSON.stringify(daftarOrder));
+    penyimpanan.setItem(KUNCI_PENYIMPANAN_ORDER, JSON.stringify(daftarValid));
   } catch {
     // Kuota penuh atau mode privat: biarkan saja. Ini bukan error fatal.
   }
@@ -170,6 +181,13 @@ export function tambahOrderAktif(
   customerName: string,
   penyimpanan: PenyimpananSederhana | null = ambilPenyimpanan(),
 ): void {
+  // Jangan pernah menyimpan id yang bukan uuid valid. Kalau (karena bug)
+  // server mengirim id rusak, lebih baik tidak menyimpan apa pun daripada
+  // menyimpan id yang kelak dipakai untuk membuka halaman yang salah.
+  if (!apakahUuidValid(orderId)) {
+    return;
+  }
+
   const daftar = bacaOrderAktif(penyimpanan);
 
   const sudahAda = daftar.some((satuOrder) => satuOrder.orderId === orderId);

@@ -16,12 +16,14 @@ import {
   balasDariErrorDatabase,
   balasGagal,
   balasOk,
+  balasOrderTidakDitemukan,
 } from "@/lib/server/balas";
 import {
   periksaPembatas,
   BATASAN_ENDPOINT,
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
+import { apakahUuidValid } from "@/lib/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +54,12 @@ export async function POST(
   }
 
   const { id } = await params;
+
+  // Id yang bukan uuid ditolak sebelum menyentuh database (bukan kegagalan
+  // sistem, jadi tidak dicatat di error_logs).
+  if (!apakahUuidValid(id)) {
+    return balasOrderTidakDitemukan();
+  }
 
   // Panggil fungsi database cancel_order.
   // p_actor_id: null karena pelakunya customer yang tidak punya akun.

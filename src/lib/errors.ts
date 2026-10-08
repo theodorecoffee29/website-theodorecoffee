@@ -74,6 +74,81 @@ export type ApiResponse<T> = OkResponse<T> | FailResponse;
 const tipeErrorSchema = z.enum(ERROR_TYPES);
 
 /**
+ * Bentuk detail satu error dari database.
+ *
+ * Supabase mengirim error sebagai OBJEK BIASA (bukan turunan Error) dengan
+ * empat field: message, code, details, dan hint. Sebelumnya objek ini diubah
+ * dengan String(error), sehingga isinya hilang dan tertulis "[object Object]".
+ * Bentuk inilah yang dipakai untuk mengambil isinya dengan benar.
+ */
+export type DetailErrorDatabase = {
+  // Pesan utama. Untuk proyek ini isinya salah satu tipe error (ORDER_NOT_FOUND,
+  // VALIDATION_FAILED, dst) ketika error datang dari fungsi database kita.
+  message: string;
+  // Kode SQLSTATE PostgreSQL, contoh "P0001". Null kalau tidak ada.
+  code: string | null;
+  // Detail tambahan dari "raise exception ... using detail". Null kalau tidak ada.
+  details: string | null;
+  // Saran dari PostgreSQL. Null kalau tidak ada.
+  hint: string | null;
+};
+
+/**
+ * Membaca detail error database apa pun menjadi objek yang aman dicatat.
+ *
+ * Input: error apa pun (objek dari supabase-js, Error biasa, teks, null, dll).
+ * Output: DetailErrorDatabase. Field yang tidak ada diisi null.
+ *
+ * Kenapa tidak memakai String(error): untuk objek biasa, String(error) hanya
+ * menghasilkan "[object Object]", sehingga pesan aslinya hilang. Fungsi ini
+ * membaca field satu per satu supaya isinya tetap terbaca.
+ */
+export function ambilDetailError(error: unknown): DetailErrorDatabase {
+  // 1. Error biasa (mis. dilempar kode sendiri). Hanya punya message, tapi bisa
+  //    saja ada field tambahan; diambil kalau memang berupa teks.
+  if (error instanceof Error) {
+    const tambahan = error as Error & {
+      code?: unknown;
+      details?: unknown;
+      hint?: unknown;
+    };
+    return {
+      message: error.message,
+      code: jadikanTeks(tambahan.code),
+      details: jadikanTeks(tambahan.details),
+      hint: jadikanTeks(tambahan.hint),
+    };
+  }
+
+  // 2. Objek biasa (bentuk error dari supabase-js): ambil tiap field kalau
+  //    memang berupa teks.
+  if (error !== null && typeof error === "object") {
+    const kolom = error as Record<string, unknown>;
+    return {
+      message: jadikanTeks(kolom.message) ?? "",
+      code: jadikanTeks(kolom.code),
+      details: jadikanTeks(kolom.details),
+      hint: jadikanTeks(kolom.hint),
+    };
+  }
+
+  // 3. Bukan objek (teks, angka, null, undefined): jadikan teks apa adanya.
+  //    null dan undefined dianggap kosong.
+  return {
+    message: error === null || error === undefined ? "" : String(error),
+    code: null,
+    details: null,
+    hint: null,
+  };
+}
+
+// Mengubah sebuah nilai menjadi teks hanya kalau memang berupa teks. Selain itu
+// dianggap tidak ada (null), supaya tidak ada "[object Object]" yang lolos.
+function jadikanTeks(nilai: unknown): string | null {
+  return typeof nilai === "string" ? nilai : null;
+}
+
+/**
  * Mengubah error dari database menjadi AppError.
  *
  * Input: error apa pun yang dilempar database. Fungsi database di proyek ini
@@ -88,11 +163,12 @@ const tipeErrorSchema = z.enum(ERROR_TYPES);
  * ramah per tipe error.
  */
 export function fromDatabaseError(error: unknown): AppError {
-  // Ambil teks pesan dari error. Database biasanya menaruhnya di .message.
-  const pesanAwal = error instanceof Error ? error.message : String(error);
+  // Pesan error dibaca lewat ambilDetailError, supaya bentuk objek dari
+  // supabase-js (bukan turunan Error) tetap terbaca di field message-nya.
+  const detail = ambilDetailError(error);
 
   // Cek apakah pesan itu persis salah satu tipe error yang dikenal.
-  const cekTipe = tipeErrorSchema.safeParse(pesanAwal);
+  const cekTipe = tipeErrorSchema.safeParse(detail.message);
 
   if (cekTipe.success) {
     // Detail (field yang salah) tidak dikirim ke pengguna; pesan ramah saja.

@@ -19,6 +19,7 @@ import {
   balasValidasiGagal,
 } from "@/lib/server/balas";
 import { buatOrderSchema } from "@/lib/server/validasi";
+import { petakanHasilBuatOrder } from "@/lib/server/petakan-buat-order";
 import {
   periksaPembatas,
   BATASAN_ENDPOINT,
@@ -78,6 +79,10 @@ export async function POST(request: NextRequest) {
     return balasDariErrorDatabase(error, "create_order");
   }
 
-  // 5. Berhasil. Status 201 karena ada sumber daya baru (order).
-  return balasOk(data, 201);
+  // 5. Berhasil. Hasil fungsi database masih bergaya snake_case (order_id,
+  //    queue_number, ...), jadi diubah dulu ke camelCase sesuai
+  //    docs/api-contract.md bagian 4 (orderId, queueNumber, ...). Kalau tidak
+  //    diubah, browser membaca orderId yang kosong. Status 201 karena ada
+  //    sumber daya baru (order).
+  return balasOk(petakanHasilBuatOrder(data), 201);
 }

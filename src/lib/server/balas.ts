@@ -6,9 +6,11 @@
 
 import { NextResponse } from "next/server";
 import {
+  ambilDetailError,
   fail,
   fromDatabaseError,
   ok,
+  pesanRamahUntuk,
   type AppError,
   type ErrorType,
 } from "@/lib/errors";
@@ -83,6 +85,23 @@ export function balasValidasiGagal(
 }
 
 /**
+ * Membuat respons ORDER_NOT_FOUND standar (status 404).
+ *
+ * Input: tidak ada.
+ * Output: NextResponse { ok: false, error: { type: "ORDER_NOT_FOUND", ... } }.
+ *
+ * Kenapa dipakai di route handler: id order yang bukan uuid ditolak SEBELUM
+ * menyentuh database. Jadi route handler memanggil fungsi ini dan berhenti;
+ * database tidak disentuh dan error_logs tidak ditulis (bukan kegagalan sistem).
+ */
+export function balasOrderTidakDitemukan(): NextResponse {
+  return balasGagal({
+    type: "ORDER_NOT_FOUND",
+    message: pesanRamahUntuk("ORDER_NOT_FOUND"),
+  });
+}
+
+/**
  * Mengubah error apa pun yang muncul saat memanggil database menjadi respons.
  *
  * Input:
@@ -109,28 +128,29 @@ export function balasDariErrorDatabase(
   const appError = fromDatabaseError(error);
 
   if (appError.type === "INTERNAL_ERROR") {
+    // Baca isi error dengan benar (message, code, details, hint). Sebelumnya
+    // objek error diubah dengan String(error) sehingga tertulis
+    // "[object Object]" dan penyebab aslinya hilang.
+    const detail = ambilDetailError(error);
+
     // Dicatat sebagai kegagalan sistem, dan kodenya dikembalikan ke pengguna.
+    // Keempat field detail ikut dimasukkan ke context. redactSecrets (di dalam
+    // logError) tetap membersihkan context sebelum ditulis ke database.
     const kode = logError({
-      message:
-        "Gagal memanggil database di " + konteks + ": " + pesanError(error),
+      message: "Gagal memanggil database di " + konteks + ": " + detail.message,
       severity: "error",
       source: "database",
-      context: { konteks: konteks },
+      context: {
+        konteks: konteks,
+        message: detail.message,
+        code: detail.code,
+        details: detail.details,
+        hint: detail.hint,
+      },
     });
 
     return balasGagal({ ...appError, code: kode });
   }
 
   return balasGagal(appError);
-}
-
-/**
- * Mengambil pesan error apa pun menjadi teks, supaya bisa ditulis ke log.
- * Input: error apa pun. Output: pesan teksnya.
- */
-function pesanError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
 }
