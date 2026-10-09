@@ -231,7 +231,7 @@ begin
     where lower(i.name) = lower(p_nama)
       and (p_kecuali_id is null or i.id <> p_kecuali_id);
 
-  else:
+  else
     -- Tidak akan terjadi: nama tabel ditulis di dalam kode fungsi.
     raise exception 'VALIDATION_FAILED'
       using detail = 'tabel ' || coalesce(p_tabel, 'kosong') || ' tidak dikenal';
@@ -339,7 +339,7 @@ begin
   v_name := public.validate_admin_name(p_name, 'name');
 
   -- Nama harus unik tanpa membedakan huruf besar/kecil.
-  public.require_unique_name('menu_items', v_name, 'name', null);
+  perform public.require_unique_name('menu_items', v_name, 'name', null);
 
   -- Harga bilangan bulat 1-10.000.000.
   v_price := public.validate_admin_price(p_price);
@@ -406,7 +406,7 @@ begin
   -- Nama unik, tapi baris menu itu sendiri tidak ikut dianggap bentrok
   -- (p_kecuali_id = v_id), supaya menu boleh menyimpan nama yang sama dengan
   -- dirinya sendiri.
-  public.require_unique_name('menu_items', v_name, 'name', v_id);
+  perform public.require_unique_name('menu_items', v_name, 'name', v_id);
 
   v_price := public.validate_admin_price(p_price);
 
@@ -715,7 +715,7 @@ begin
   v_role := public.require_admin(p_actor_id);
 
   v_name := public.validate_admin_name(p_name, 'name');
-  public.require_unique_name('ingredients', v_name, 'name', null);
+  perform public.require_unique_name('ingredients', v_name, 'name', null);
 
   -- Satuan wajib diisi. Enum di database sudah menolak nilai di luar g/ml/pcs,
   -- tapi pesan errornya tidak ramah, jadi dicek di sini.
@@ -808,7 +808,7 @@ begin
 
   v_id := public.parse_admin_uuid(p_ingredient_id, 'ingredientId');
   v_name := public.validate_admin_name(p_name, 'name');
-  public.require_unique_name('ingredients', v_name, 'name', v_id);
+  perform public.require_unique_name('ingredients', v_name, 'name', v_id);
 
   -- Baris dikunci supaya nilai before tidak berubah di tengah.
   select i.name
