@@ -77,6 +77,8 @@ Status **Habis** tidak disimpan, tapi dihitung: menu habis kalau ada bahan di re
 | finished_at, finished_by | Barista menekan Selesai |
 | cancelled_at, cancelled_by_role | `customer` / `cashier` / `admin` |
 | cancelled_by | profil pembatal, kosong kalau customer |
+| cancel_reason | enum alasan pembatalan: `stok_habis` / `pembayaran_tidak_diterima` / `diminta_customer` / `pesanan_ganda` / `salah_input` / `lainnya`. Kosong untuk order yang tidak dibatalkan (dan untuk data tes lama). |
+| cancel_note | catatan alasan, 1-100 karakter, kosong kalau tidak ada. Wajib kalau alasannya `lainnya`. |
 
 ### order_items
 | Field | Keterangan |
@@ -149,7 +151,7 @@ Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
 1. **Log hanya bisa ditambah.** `activity_logs` dan `error_logs` tidak boleh di-update atau dihapus oleh siapa pun lewat aplikasi.
 2. **Konfirmasi order adalah satu transaksi database** (fungsi di sisi database): cek status masih `menunggu_konfirmasi`, buat `payments`, kurangi stok dan catat `stock_movements`, ubah status ke `antrean`, tulis `activity_logs`. Kalau satu langkah gagal, semuanya batal.
 3. **Perpindahan status memakai update bersyarat** (`... WHERE status = <status lama>`), sehingga Batalkan dan Konfirmasi bersamaan hanya menghasilkan satu pemenang.
-4. **Stok boleh minus kalau disetujui.** Konfirmasi dengan bahan yang tidak cukup ditolak `STOCK_INSUFFICIENT` dan seluruh transaksi dibatalkan. Kalau Cashier/Admin menyetujuinya, stok boleh minus dan tercatat di log.
+4. **Stok boleh minus.** Kekurangan stok saat konfirmasi tidak memblokir, hanya memicu peringatan dan tercatat.
 5. **Order tidak pernah dihapus.** Yang batal cukup berstatus `dibatalkan`.
 6. **Snapshot harga dan nama** di `order_items`, jadi mengubah menu tidak mengubah laporan lama.
 7. **Nomor antrean** diambil dari `queue_counters` secara atomik supaya tidak ada nomor ganda.

@@ -30,6 +30,7 @@ Tidak ada pendaftaran publik. Semua akun internal hanya dibuat oleh Admin.
 | Lihat antrean Barista (hanya yang sudah dikonfirmasi) | - | - | Ya | - |
 | Tombol Mulai dan Selesai | - | - | Ya | - |
 | Lihat harga dan data pembayaran | - | Ya | - | Ya |
+| Lihat sisa stok (hanya baca): sisa porsi per menu dan sisa bahan | - | Ya | Ya | Ya |
 | Laporan hari ini dan Riwayat (lihat dan cetak) | - | Ya | - | Ya |
 | Kelola menu dan resep | - | - | - | Ya |
 | Ubah stok bahan (restock dan koreksi) | - | - | - | Ya |
@@ -38,7 +39,7 @@ Tidak ada pendaftaran publik. Semua akun internal hanya dibuat oleh Admin.
 
 **Tidak boleh diubah atau dihapus oleh siapa pun (termasuk Admin):** order berstatus selesai atau dibatalkan, laporan di Riwayat, log aktivitas, log error.
 
-**Layar Barista** hanya menampilkan nomor antrean, nama customer, item + jumlah, dan catatan. Tanpa harga dan data pembayaran.
+**Layar Barista** hanya menampilkan nomor antrean, nama customer, item + jumlah, dan catatan. Tanpa harga dan data pembayaran. Ada tambahan panel sisa stok (hanya baca), yang bukan data harga atau pembayaran.
 
 ## 3. Akses customer (tanpa login)
 
@@ -62,7 +63,7 @@ Semua tabel **menolak akses secara default**. Akses dibuka per kebutuhan:
 |---|---|---|
 | profiles | Pemilik akun (dirinya sendiri), Admin (semua) | Admin |
 | menu_items | Cashier dan Barista (hanya yang aktif), Admin (semua). **Customer tidak membaca tabel**, menu diambil lewat fungsi server `get_menu`. | Admin |
-| ingredients, recipes | Admin | Admin (stok hanya lewat fungsi yang mencatat pergerakan) |
+| ingredients, recipes | Admin (langsung). Cashier dan Barista hanya melihat sisa stok lewat fungsi server `get_stock_overview`, bukan membaca tabel. | Admin (stok hanya lewat fungsi yang mencatat pergerakan) |
 | orders, order_items | Cashier dan Admin (semua). Barista lewat tampilan khusus tanpa harga, hanya status antrean dan dikerjakan. | Hanya lewat fungsi (create, confirm, cancel, start, finish) |
 | payments | Cashier, Admin | Hanya fungsi konfirmasi |
 | stock_movements | Admin | Hanya fungsi (konfirmasi order, koreksi Admin) |

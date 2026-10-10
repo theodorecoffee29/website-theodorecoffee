@@ -51,7 +51,7 @@ Abaikan `docs/_archive/` (dokumen lama).
 6. **Secret dan `service role` hanya di server** dan environment variable. Jangan masuk kode klien atau repo.
 7. **Semua aksi dan error dicatat** lewat helper log yang sama (`src/lib/log`). Jangan membuat cara log baru.
 8. **Layar Barista tanpa harga dan data pembayaran.**
-9. **Stok boleh minus, tapi tidak diam-diam.** Konfirmasi dengan bahan yang tidak cukup **ditolak** `STOCK_INSUFFICIENT` (seluruh transaksi batal). Cashier/Admin boleh melanjutkan dengan persetujuan eksplisit, lalu stok boleh minus dan tercatat di log.
+9. **Stok boleh minus.** Kekurangan stok saat konfirmasi hanya peringatan, bukan blokir.
 10. Uang adalah bilangan bulat rupiah. Jumlah stok dan takaran memakai `numeric(12,3)`. Waktu `timestamptz`, "hari" memakai WIB.
 
 ## Struktur folder

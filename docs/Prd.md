@@ -33,18 +33,20 @@ Semua halaman responsif (tidak ada versi khusus per perangkat).
 1. Lihat menu (menu tampil **Habis** kalau bahan tidak cukup untuk satu porsi)
 2. Pilih item dan jumlah, plus catatan per item
 3. Isi nama, kirim pesanan, dapat nomor antrean
-4. Lihat status: Menunggu konfirmasi → Sedang dibuat → Pesanan selesai
+4. Lihat status: Menunggu konfirmasi → Sedang dibuat → Pesanan selesai (atau Dibatalkan, beserta alasannya)
 5. Batalkan pesanan (hanya sebelum konfirmasi, dengan popup Ya/Tidak)
 
 **Cashier** (laptop)
 6. Notifikasi pesanan online baru
 7. Konfirmasi order + pilih metode bayar (QRIS atau tunai), sekaligus pencatatan pembayaran offline
 8. Input order manual untuk customer yang datang ke kasir (bisa dengan waktu manual untuk cadangan kertas)
-9. Batalkan order (sampai Barista menekan Mulai; pembayaran dibatalkan dan stok dikembalikan otomatis)
+9. Batalkan order dengan memilih alasan (sampai Barista menekan Mulai; pembayaran dibatalkan dan stok dikembalikan otomatis). Alasan dilihat customer di halaman statusnya.
+9a. Indikator sisa stok: sisa porsi per menu dan daftar sisa bahan, termasuk sisa porsi di tiap order yang menunggu konfirmasi (hanya baca; dasar Cashier memilih order mana yang diterima kalau bersaing untuk stok terakhir)
 
 **Barista** (laptop)
 10. Antrean berurutan berdasarkan waktu konfirmasi
 11. Tombol **Mulai**, lalu **Selesai**, di tiap order
+11a. Melihat sisa stok (hanya baca)
 
 **Admin/Owner** (fleksibel)
 12. Kelola menu dan resep
