@@ -9,6 +9,7 @@
 import { MAKSIMAL_BARIS } from "@/features/admin/menu/editor-resep";
 import { teksMenuAdmin } from "@/features/admin/menu/teks";
 import type { KeadaanEditorResep } from "@/features/admin/menu/use-editor-resep";
+import Link from "next/link";
 
 // Props untuk editor resep.
 export type PropsEditorResep = {
@@ -109,14 +110,19 @@ export function EditorResep({ keadaan, namaMenu, tutup }: PropsEditorResep) {
         <div className="mt-4">
           <p className="text-sm text-gray-700">{teks.labelBahan}</p>
 
-          {/* Belum ada bahan sama sekali. */}
+          {/* Belum ada bahan sama sekali. Bahan dibuat di halaman Stok, jadi diberi
+              tautan supaya Admin bisa langsung ke sana. */}
           {keadaan.memuatBahan ? (
             <p className="mt-1 text-sm text-gray-600">
               {teksMenuAdmin.pesan.memuat}
             </p>
           ) : keadaan.pilihanBahan.length === 0 &&
             keadaan.baris.length === 0 ? (
-            <p className="mt-1 text-sm text-gray-600">{teks.belumAdaBahan}</p>
+            <p className="mt-1 text-sm text-gray-600">
+              <Link href="/admin/stok" className="underline">
+                {teks.belumAdaBahan}
+              </Link>
+            </p>
           ) : (
             <div className="mt-1 flex flex-wrap gap-2">
               {keadaan.pilihanBahan.map((satu) => (

@@ -54,8 +54,9 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 | `get_order_status` | Anonim (dengan ID order) | Status order sendiri |
 | `cancel_order` | Customer (order sendiri), Cashier, Admin | Batalkan (customer: sebelum konfirmasi, Cashier/Admin: sampai Barista menekan Mulai) |
 | `list_orders` | Cashier, Admin | Daftar order dengan status, pembayaran, dan notifikasi baru |
-| `confirm_order` | Cashier, Admin | Konfirmasi + metode bayar |
+| `confirm_order` | Cashier, Admin | Konfirmasi + metode bayar (+ izin stok minus) |
 | `create_manual_order` | Cashier, Admin | Input order manual (sekaligus dikonfirmasi) |
+| `order_stock_check`, `pending_orders_stock_check` | Cashier, Admin | Cek kecukupan stok bahan, hanya membaca |
 | `get_barista_queue` | Barista | Antrean tanpa harga dan pembayaran |
 | `start_order` | Barista | Tombol Mulai |
 | `finish_order` | Barista | Tombol Selesai |
@@ -100,18 +101,30 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 - Notifikasi "Pesanan baru dari A" muncul dari order berstatus `menunggu_konfirmasi` yang baru terlihat
 
 ### confirm_order (Cashier, Admin)
-- **Input:** `{ orderId, paymentMethod: "qris" | "tunai" }`
+- **Input:** `{ orderId, paymentMethod: "qris" | "tunai", allowNegativeStock? }` (`allowNegativeStock` default `false`)
 - **Output:** `{ status: "antrean", queueNumber, stockWarnings: [{ ingredientName, stockAfter }] }`
-- **Efek:** satu transaksi database: cek status → catat pembayaran → kurangi stok dan catat pergerakan → ubah status ke `antrean` → log `order.confirmed`, `payment.recorded`, `stock.deducted` (dan `stock.negative` kalau stok jadi minus)
-- **Error:** `ORDER_NOT_FOUND`, `ORDER_STATUS_CHANGED`, `VALIDATION_FAILED` (metode bayar tidak valid), `FORBIDDEN`, `INTERNAL_ERROR`
-- `stockWarnings` bukan error. Konfirmasi tetap berhasil dan Cashier hanya melihat peringatan.
+- **Efek:** satu transaksi database: cek status → kunci bahan dan cek kecukupan stok → catat pembayaran → kurangi stok dan catat pergerakan → ubah status ke `antrean` → log `order.confirmed`, `payment.recorded`, `stock.deducted` (dan `stock.negative` kalau stok jadi minus)
+- **Error:** `ORDER_NOT_FOUND`, `ORDER_STATUS_CHANGED`, `VALIDATION_FAILED` (metode bayar tidak valid), `STOCK_INSUFFICIENT` (bahan tidak cukup dan `allowNegativeStock` tidak `true`), `FORBIDDEN`, `INTERNAL_ERROR`
+- Pemeriksaan stok terjadi **di dalam transaksi yang sama** dengan penguncian baris bahan, sehingga dua konfirmasi bersamaan untuk stok terakhir hanya menghasilkan satu pemenang.
+- `STOCK_INSUFFICIENT` membatalkan seluruh transaksi: tidak ada pembayaran, tidak ada perubahan status, dan tidak ada pergerakan stok. Cashier boleh mengulangi dengan `allowNegativeStock: true`; stok lalu boleh minus dan log `stock.negative` diberi `meta.stock_override = true`.
 
 ### create_manual_order (Cashier, Admin)
-- **Input:** `{ customerName, items, paymentMethod, occurredAt?, idempotencyKey }`
+- **Input:** `{ customerName, items, paymentMethod, occurredAt?, idempotencyKey, allowNegativeStock? }`
 - **Output:** sama dengan `confirm_order`, ditambah `orderId`
 - **Efek:** order langsung berstatus `antrean`, **tanpa tahap Menunggu konfirmasi**, dalam satu transaksi: order, pembayaran, pengurangan stok, dan log (`order.created` dan `order.confirmed` keduanya dicatat)
 - **Waktu manual (`occurredAt`):** hanya boleh di **hari berjalan (WIB)** dan tidak boleh di masa depan, karena laporan hari sebelumnya sudah terkunci di Riwayat. Order dengan waktu manual ditandai (`is_manual_time`).
-- **Error:** `VALIDATION_FAILED`, `MENU_UNAVAILABLE`, `FORBIDDEN`, `INTERNAL_ERROR`
+- **Error:** `VALIDATION_FAILED`, `MENU_UNAVAILABLE`, `STOCK_INSUFFICIENT`, `FORBIDDEN`, `INTERNAL_ERROR`
+
+### Pemeriksaan stok bahan
+
+| Fungsi | Input | Output |
+|---|---|---|
+| `order_stock_check` | `p_order_id` (uuid) | `{ sufficient, shortages: [{ ingredientId, ingredientName, needed, available }] }` |
+| `pending_orders_stock_check` | tidak ada | Array `[{ orderId, sufficient, shortages }]` untuk semua order `menunggu_konfirmasi` hari ini (WIB) |
+
+- Keduanya hanya membaca, tidak mengunci baris, dan tidak mengubah apa pun.
+- Kebutuhan dihitung dengan menjumlahkan `qty item x qty_per_portion` per bahan. Menu tanpa resep tidak punya kebutuhan.
+- `pending_orders_stock_check` sengaja satu query untuk seluruh order (bukan satu pemanggilan per order) karena dipanggil setiap 2 detik oleh layar Cashier.
 
 ### get_barista_queue (Barista)
 - **Input:** tidak ada
@@ -151,7 +164,7 @@ Semua fungsi yang mengubah stok mengunci baris bahan (`for update`) dan mengisi 
 | Layar | Fungsi yang dipanggil | Interval |
 |---|---|---|
 | Status customer | `get_order_status` | 5 detik, berhenti saat status akhir (`selesai` atau `dibatalkan`) |
-| Cashier | `list_orders` | 3 detik |
+| Cashier | `list_orders`, `pending_orders_stock_check` | 3 detik, dan `pending_orders_stock_check` 2 detik |
 | Barista | `get_barista_queue` | 3 detik |
 
 ## 6. Jenis error
@@ -164,6 +177,7 @@ Semua fungsi yang mengubah stok mengunci baris bahan (`for update`) dan mengisi 
 | `ORDER_NOT_FOUND` | Order tidak ada atau ID tidak valid | Tidak |
 | `ORDER_STATUS_CHANGED` | Status sudah berubah sejak layar dimuat (kasus balapan) | Tidak |
 | `MENU_UNAVAILABLE` | Menu nonaktif atau Habis | Tidak |
+| `STOCK_INSUFFICIENT` | Bahan tidak cukup untuk order, dan tidak ada persetujuan stok minus | Tidak |
 | `RATE_LIMITED` | Terlalu banyak permintaan | Ya (warning) |
 | `INTERNAL_ERROR` | Kegagalan tak terduga di server atau database | **Ya (error), dengan kode `ERR-xxxx`** |
 

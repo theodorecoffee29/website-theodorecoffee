@@ -80,7 +80,7 @@ Alur dianggap selesai kalau semua poin ini lolos:
 12. Kegagalan membuat atau mengonfirmasi order tercatat di log error dan tidak membuat data ganda.
 13. Order yang diinput belakangan memakai waktu manual dan ditandai.
 14. Menu yang bahannya tidak cukup untuk satu porsi tampil Habis dan tidak bisa dipesan.
-15. Konfirmasi saat stok kurang tetap berhasil, menampilkan peringatan ke Cashier, dan tercatat di log.
+15. Konfirmasi saat stok kurang ditolak dan tidak mengubah apa pun. Kalau Cashier/Admin menyetujui stok minus, konfirmasi berhasil, stok jadi minus, dan tercatat di log.
 16. Nomor antrean mulai dari 1 lagi tiap hari (WIB) dan tidak ada nomor ganda dalam satu hari.
 17. Beberapa Cashier atau Barista boleh aktif bersamaan (akun berbeda, atau satu akun di dua laptop). Antrean dan status tersinkron di semua layar tanpa refresh manual. Dua Cashier yang menekan Konfirmasi pada order yang sama menghasilkan satu pemenang dan satu pembayaran, sedangkan yang kalah mendapat pesan "status pesanan sudah berubah".
 18. Order yang diinput Cashier langsung berstatus `antrean` (tidak pernah `menunggu_konfirmasi`), pembayaran dan pengurangan stok tercatat, dan `order.created` serta `order.confirmed` masuk log.
@@ -90,6 +90,6 @@ Alur dianggap selesai kalau semua poin ini lolos:
 ## 7. Keputusan
 
 1. **Stok berkurang saat konfirmasi.** Order yang dibatalkan tidak pernah menyentuh stok.
-2. **Stok tidak cukup:** menu otomatis tampil **Habis** (tidak bisa dipesan) kalau bahan tidak cukup untuk satu porsi. Saat konfirmasi, kekurangan stok hanya **peringatan** ke Cashier, tidak diblokir, karena customer sudah membayar dan stok di sistem bisa selisih dengan stok fisik (takaran, tumpah). Stok boleh menjadi minus dan tercatat di log, supaya Admin bisa mengoreksinya.
+2. **Stok tidak cukup:** menu otomatis tampil **Habis** (tidak bisa dipesan) kalau bahan tidak cukup untuk satu porsi. Saat konfirmasi, kalau bahannya tidak cukup untuk **seluruh** order, konfirmasi **ditolak** dengan `STOCK_INSUFFICIENT` dan Cashier diberi dua pilihan: membatalkan order, atau melanjutkan dengan stok minus. Kalau dilanjutkan, konfirmasi berhasil, stok boleh minus, dan tercatat di log `stock.negative` dengan `stock_override` supaya Admin tahu minus itu keputusan sadar. Alasannya: kekurangannya bisa karena takaran atau tumpah, jadi customer yang sudah bayar tidak boleh tertahan hanya karena angka stok sistem.
 3. **Admin boleh mengonfirmasi order** sebagai cadangan kalau Cashier berhalangan atau laptopnya bermasalah. Tercatat di log sebagai aksi Admin.
 4. **Nomor antrean mulai dari 1 lagi tiap hari** (WIB), sejalan dengan laporan harian. Identitas order di database tetap unik (ID internal), dan nomor antrean + tanggal dipakai sebagai referensi di layar.

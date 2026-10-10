@@ -23,6 +23,7 @@ import Link from "next/link";
 import PanelPeran from "@/components/panel-peran";
 import { wajibPeran } from "@/lib/auth/session";
 import { teksMenuAdmin } from "@/features/admin/menu/teks";
+import { teksStokAdmin } from "@/features/admin/stok/teks";
 
 export default async function HalamanAdmin() {
   // Penjaga utama. Kalau pengguna bukan Admin, fungsi ini mengarahkan ke
@@ -36,8 +37,7 @@ export default async function HalamanAdmin() {
         {/* Identitas Admin dan tombol keluar. */}
         <PanelPeran sesi={sesi} path="/admin" />
 
-        {/* Daftar halaman Admin. Menu dan resep sudah bisa dibuka; stok menyusul
-            (belum ada tautannya karena halamannya belum dibuat). */}
+        {/* Daftar halaman Admin. */}
         <nav className="rounded border border-gray-200 bg-white p-4">
           <h2 className="text-sm font-semibold">Halaman Admin</h2>
 
@@ -48,12 +48,10 @@ export default async function HalamanAdmin() {
               </Link>
             </li>
 
-            {/* Stok belum ada halamannya, jadi hanya ditampilkan sebagai
-                informasi, belum bisa diklik. */}
             <li>
-              <span className="text-sm text-gray-500">
-                {teksMenuAdmin.stokSegera}
-              </span>
+              <Link href="/admin/stok" className="text-sm underline">
+                {teksStokAdmin.stok}
+              </Link>
             </li>
           </ul>
         </nav>
