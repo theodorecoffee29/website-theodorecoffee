@@ -6,6 +6,8 @@
 //
 // Mengikuti aturan di AGENTS.md bagian "Tampilan (sementara sampai Fase 7)".
 
+import type { AlasanBatal } from "@/lib/alasan-batal";
+
 export const teksCashier = {
   // Judul halaman dan identitas.
   judulHalaman: "Cashier",
@@ -81,6 +83,10 @@ export const teksCashier = {
   },
 
   // Popup konfirmasi pembatalan (docs/order-flow.md bagian 6 butir 7).
+  //
+  // Mulai tugas 5.6 popup ini juga meminta ALASAN pembatalan, karena Cashier dan
+  // Admin wajib memilih alasannya (acceptance criteria 22) dan alasan itu dibaca
+  // customer di halaman statusnya.
   dialogBatal: {
     judul: "Batalkan pesanan ini?",
     // Dipakai kalau pesanan belum dikonfirmasi (status menunggu_konfirmasi).
@@ -93,6 +99,46 @@ export const teksCashier = {
       "Pesanan ini sudah dikonfirmasi dan dibayar. Membatalkan akan membatalkan pembayaran dan mengembalikan stok bahan.",
     // Ditambahkan kalau pesanan sudah ada di antrean Barista.
     keteranganSudahDikerjakan: "Bisa dibatalkan sampai Barista menekan Mulai.",
+
+    // Judul kelompok alasan di dalam popup.
+    labelAlasan: "Alasan pembatalan",
+    // Label isian catatan. Selalu ada, jadi Cashier bisa menuliskan penjelasan
+    // untuk alasan yang sudah jelas (opsional, tapi wajib untuk "Lainnya").
+    labelCatatan: "Catatan (wajib untuk alasan Lainnya)",
+    placeholderCatatan: "Contoh: customer berubah pikiran",
+    // Peng atribut aria-label untuk kelompok radio alasan.
+    labelPilihanAlasan: "Pilihan alasan pembatalan",
+  },
+
+  // Label untuk tiap alasan pembatalan.
+  //
+  // Kunci di sini HARUS sama dengan ALASAN_BATAL di src/lib/alasan-batal.ts
+  // (yang juga sama dengan enum order_cancel_reason di database). Tipe Labelnya
+  // diambil dari daftar itu, jadi menambah alasan baru akan membuat TypeScript
+  // menandai file ini sampai labelnya ditambahkan.
+  //
+  // Label ditulis manual (bukan otomatis dengan huruf kapital) supaya kalimatnya
+  // mengikuti bahasa Cashier, bukan nilai mentah dari database.
+  alasanBatal: {
+    // "satisfies" dipakai supaya TypeScript wajib memeriksa semua alasan punya
+    // label, tanpa mengubah teksnya jadi tipe yang lebih umum.
+    label: {
+      stok_habis: "Stok habis",
+      pembayaran_tidak_diterima: "Pembayaran tidak diterima",
+      diminta_customer: "Diminta customer",
+      pesanan_ganda: "Pesanan ganda",
+      salah_input: "Salah input",
+      lainnya: "Lainnya",
+    } satisfies Record<AlasanBatal, string>,
+    // Pesan pendek saat alasan/catatannya belum boleh dikirim.
+    pesanPilihDulu: "Pilih alasan pembatalan dulu.",
+    pesanCatatanMaks: "Catatan maksimal 100 karakter.",
+    pesanCatatanWajib: "Isi catatan untuk alasan Lainnya.",
+    // Teks pembatalan pada pesanan yang sudah dibatalkan. {alasan} diisi label
+    // alasannya.
+    teksDibatalkan: "Dibatalkan: {alasan}",
+    // Ditambahkan di bawah baris di atas kalau pesanan punya catatan alasan.
+    catatanPembatalan: "Catatan: {catatan}",
   },
 
   // Notifikasi pesanan baru (tanpa suara, hanya teks spanduk dan judul tab).

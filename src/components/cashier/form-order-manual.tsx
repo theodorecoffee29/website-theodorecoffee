@@ -12,10 +12,18 @@ import { teksCashier } from "@/features/cashier/teks";
 import type { ItemMenu, MetodeBayar } from "@/features/cashier/api";
 import type { BarisForm } from "@/features/cashier/form-manual";
 import type { KeadaanFormManual } from "@/features/cashier/use-form-manual";
+import {
+  cariSisaPorsi,
+  type MenuStokRingkas,
+} from "@/features/stok/sisa-porsi";
+import { teksStok } from "@/features/stok/teks";
 
 // Props form order manual. Semuanya berasal dari hook useFormOrderManual.
 export type PropsFormOrderManual = {
   keadaan: KeadaanFormManual;
+  // Daftar menu dari panel Sisa stok, dipakai untuk menampilkan sisa porsi di
+  // samping tiap menu. Boleh kosong kalau panelnya belum termuat.
+  menuStok: readonly MenuStokRingkas[];
 };
 
 // Daftar pilihan jam (0 sampai 23) dan menit (0 sampai 59), dipakai untuk
@@ -33,7 +41,7 @@ const PILIHAN_MENIT = Array.from({ length: 60 }, (_, angka) =>
  * Input: keadaan dari hook.
  * Output: elemen form.
  */
-export function FormOrderManual({ keadaan }: PropsFormOrderManual) {
+export function FormOrderManual({ keadaan, menuStok }: PropsFormOrderManual) {
   const teks = teksCashier.formManual;
 
   return (
@@ -73,6 +81,7 @@ export function FormOrderManual({ keadaan }: PropsFormOrderManual) {
               key={satuMenu.id}
               menu={satuMenu}
               baris={keadaan.baris[satuMenu.id]}
+              menuStok={menuStok}
               disabled={keadaan.sedangMengirim}
               ubahQty={keadaan.ubahQty}
               ubahCatatan={keadaan.ubahCatatan}
@@ -259,12 +268,15 @@ export function FormOrderManual({ keadaan }: PropsFormOrderManual) {
 function BarisMenu({
   menu,
   baris,
+  menuStok,
   disabled,
   ubahQty,
   ubahCatatan,
 }: {
   menu: ItemMenu;
   baris: BarisForm | undefined;
+  // Daftar menu dari panel Sisa stok, untuk menampilkan sisa porsi.
+  menuStok: readonly MenuStokRingkas[];
   disabled: boolean;
   ubahQty: (menuItemId: string, qty: string) => void;
   ubahCatatan: (menuItemId: string, note: string) => void;
@@ -288,12 +300,19 @@ function BarisMenu({
         </span>
       </div>
 
-      {/* Label "Habis" kalau bahannya tidak cukup. */}
+      {/* Label "Habis" kalau bahannya tidak cukup untuk satu porsi. */}
       {!menu.available ? (
         <p className="mt-1 text-xs font-semibold text-red-700">
           {teks.labelHabis}
         </p>
-      ) : null}
+      ) : (
+        /* Sisa porsi menu ini dari panel Sisa stok. PENTING: ini hanya
+           informasi, tidak membuat menu jadi tidak bisa dipilih. Menu yang masih
+           bisa dipesan pun boleh dipilih walau bahannya habis untuk pesanan
+           beberapa porsi (docs/order-flow.md bagian 7: tidak ada penolakan
+           otomatis karena stok). */
+        tampilTeksSisaPorsi(cariSisaPorsi(menuStok, menu.id))
+      )}
 
       <div className="mt-2 flex flex-wrap gap-2">
         {/* Isian jumlah. */}
@@ -338,5 +357,31 @@ function BarisMenu({
         </div>
       </div>
     </li>
+  );
+}
+
+/**
+ * Mengubah sisa porsi satu menu menjadi elemen teks yang tampil, atau null
+ * kalau tidak ada data.
+ *
+ * Input: sisa porsi (angka) atau null kalau menunya tidak ada di panel sisa
+ *        stok, atau menunya tidak punya resep.
+ * Output: elemen <p> berisi teks sisa porsi, atau null kalau tidak perlu
+ *         ditampilkan.
+ *
+ * Menu tanpa resep (null) sengaja tidak menampilkan apa pun: tidak ada bahan
+ * yang bisa dihitung, jadi menulis "sisa 0 porsi" akan menyesatkan. Menu yang
+ * bahannya habis menampilkan "sisa 0 porsi" supaya Cashier tahu bedanya dengan
+ * menu tanpa resep.
+ */
+function tampilTeksSisaPorsi(sisa: number | null) {
+  if (sisa === null) {
+    return null;
+  }
+
+  return (
+    <p className="mt-1 text-xs text-gray-600">
+      {teksStok.petunjukSisa.replace("{jumlah}", String(sisa))}
+    </p>
   );
 }

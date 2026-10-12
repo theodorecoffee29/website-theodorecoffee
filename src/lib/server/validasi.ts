@@ -17,6 +17,7 @@
 // diabaikan oleh zod karena tidak ada di skema.
 
 import { z } from "zod";
+import { ALASAN_BATAL } from "@/lib/alasan-batal";
 
 // Satu baris item order. menuItemId dan qty wajib; note opsional.
 const itemOrderSchema = z.object({
@@ -59,6 +60,41 @@ export const konfirmasiOrderSchema = z.object({
     message: "paymentMethod harus 'qris' atau 'tunai'.",
   }),
 });
+
+// Daftar alasan pembatalan diambil dari satu modul yang dipakai juga oleh dialog
+// pembatalan di browser (src/lib/alasan-batal.ts), supaya daftar yang tampil dan
+// daftar yang diterima server tidak mungkin berbeda. Isinya sama dengan enum
+// order_cancel_reason di database.
+export const DAFTAR_ALASAN_BATAL = ALASAN_BATAL;
+
+// Skema untuk POST pembatalan oleh staf (Cashier/Admin).
+//
+// Aturannya (docs/api-contract.md bagian 2):
+//   - reason wajib diisi, karena Cashier/Admin yang memutuskan,
+//   - note maksimal 100 karakter setelah spasi pinggir dipangkas,
+//   - note WAJIB (tidak boleh kosong) kalau reason = "lainnya", karena alasan
+//     yang tidak dikenal harus dijelaskan.
+//
+// Perhatikan: schema ini hanya untuk pembatalan oleh STAF. Endpoint pembatalan
+// oleh customer (/api/orders/[id]/cancel) tidak memakai body sama sekali, karena
+// database mengisi alasan "diminta_customer" sendiri.
+export const batalOrderSchema = z
+  .object({
+    reason: z.enum(DAFTAR_ALASAN_BATAL, {
+      message:
+        "reason harus salah satu dari: stok_habis, pembayaran_tidak_diterima, " +
+        "diminta_customer, pesanan_ganda, salah_input, lainnya.",
+    }),
+    // note opsional. Dipangkas dulu supaya panjang yang dicek itu panjang setelah
+    // spasi pinggir dibuang, sama seperti aturan di bagian 2.
+    note: z.string().trim().max(100, "note maksimal 100 karakter.").optional(),
+  })
+  // Catatan wajib kalau reason-nya "lainnya". Periksaannya di refine karena
+  // bergantung pada nilai reason, bukan pada note saja.
+  .refine((data) => data.reason !== "lainnya" || (data.note ?? "") !== "", {
+    message: "note wajib diisi 1-100 karakter kalau reason = lainnya.",
+    path: ["note"],
+  });
 
 // Skema untuk POST /api/cashier/orders (order manual oleh Cashier).
 //

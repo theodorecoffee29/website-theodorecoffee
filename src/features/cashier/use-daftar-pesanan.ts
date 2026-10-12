@@ -35,6 +35,20 @@ import {
   type PesananRingkas,
 } from "./kelompok-order";
 import {
+  periksaAlasanBatal,
+  labelAlasanBatal,
+  pilihanAlasanBatal,
+  type PilihanAlasan,
+} from "./alasan-batal";
+import { POLLING_DAFTAR_PESANAN_MS } from "./polling";
+import type { AlasanBatal } from "@/lib/alasan-batal";
+import {
+  cariSisaPorsi,
+  stokTidakCukup,
+  type MenuStokRingkas,
+} from "@/features/stok/sisa-porsi";
+import { teksStok } from "@/features/stok/teks";
+import {
   cariPesananBaru,
   hitungPesananMenunggu,
   teksSpandukBaru,
@@ -42,14 +56,25 @@ import {
 import { teksCashier } from "./teks";
 import { jamWib } from "./waktu-wib";
 
-// Berapa milidetik satu jeda polling. docs/api-contract.md bagian 5 menetapkan
-// layar Cashier memanggil list_orders setiap 3 detik.
-export const INTERVAL_POLLING_MS = 3000;
-
 // Berapa kali polling gagal berturut-turut sebelum satu log error dikirim ke
 // server. Tujuannya supaya log error tidak dibanjiri kalau internet memang
 // sedang putus.
 const BATASAN_GAGAL_BERURUTAN = 3;
+
+// Hint stok per item pesanan: sisa porsi menunya, dan apakah pesanannya
+// melebihi sisa itu.
+type PetunjukStokItem = {
+  // Teks sisa porsi yang tampil ("sisa 12 porsi"), atau null kalau tidak ada
+  // data sisa stok untuk menu ini (mis. menu tanpa resep, atau panel sisa stok
+  // belum termuat).
+  teksSisaPorsi: string | null;
+  // true kalau jumlah pesanan ini melebihi sisa porsinya.
+  //
+  // PENTING: ini hanya PETUNUK. Tidak pernah memblokir tombol Konfirmasi
+  // (docs/order-flow.md bagian 7: tidak ada penolakan otomatis karena stok).
+  // Pemeriksaan stok yang sebenarnya ada di database.
+  tidakCukup: boolean;
+};
 
 // Satu pesanan yang sudah disiapkan untuk tampilan: semua teks dan angka sudah
 // diubah ke bentuk yang enak dibaca, supaya komponen tampilan tidak melakukan
@@ -70,16 +95,26 @@ export type PesananTampil = {
   waktuManual: boolean;
   items: {
     nama: string;
+    // Id menu, dipakai untuk mencocokkan item ini dengan sisa porsi menunya.
+    // Boleh kosong untuk order lama yang datanya tidak memuat kolom ini.
+    menuItemId: string | null;
     jumlah: number;
     catatan: string | null;
     harga: number;
     subtotal: number;
+    // Petunjuk sisa stok untuk item ini (hanya diisi untuk pesanan yang
+    // menunggu konfirmasi, karena di situlah Cashier butuh memutuskan).
+    petunjukStok: PetunjukStokItem;
   }[];
   total: number;
   // Teks status untuk Cashier (bukan teks customer).
   teksStatus: string;
   // Metode bayar kalau pesanan sudah dikonfirmasi, kalau tidak kosong.
   metodeBayarTampil: string | null;
+  // Label alasan pembatalan kalau pesanan ini dibatalkan, kalau tidak kosong.
+  labelAlasanBatal: string | null;
+  // Catatan alasan pembatalan, kalau ada.
+  catatanAlasanBatal: string | null;
   status: string;
 };
 
@@ -105,6 +140,22 @@ export type KeadaanCashier = {
   sedangAksi: string | null;
   // Id pesanan yang popup pembatalannya sedang terbuka, atau null.
   dialogBatalUntuk: string | null;
+  // Alasan pembatalan yang dipilih di popup, atau null kalau belum memilih.
+  //
+  // TIDAK ada nilai bawaan: Cashier wajib memilih alasannya sendiri
+  // (docs/order-flow.md bagian 6 acceptance criteria 22). Karena itu nilainya
+  // selalu null saat popup baru dibuka.
+  alasanBatalDipilih: AlasanBatal | null;
+  // Catatan alasan pembatalan yang diketik di popup (boleh kosong).
+  catatanBatal: string;
+  // Daftar pilihan alasan untuk radio di popup (nilai dan label).
+  pilihanAlasan: PilihanAlasan[];
+  // true kalau alasan dan catatannya sudah boleh dikirim. Tombol
+  // "Ya, batalkan" memakai nilai ini supaya tidak bisa ditekan sebelum lengkap.
+  bolehKirimBatal: boolean;
+  // Pesan alasan yang belum boleh dikirim (mis. "Catatan wajib diisi untuk
+  // alasan Lainnya"), atau null kalau sudah boleh.
+  pesanAlasanBatal: string | null;
   // Metode bayar yang dipilih untuk tiap pesanan, disimpan berdasarkan id
   // pesanan. Kenapa bukan satu nilai untuk semua: biasanya ada beberapa pesanan
   // menunggu sekaligus, dan tiap pesanan punya pembayaran sendiri. Kalau
@@ -116,6 +167,8 @@ export type KeadaanCashier = {
   konfirmasi: (orderId: string) => void;
   bukaDialogBatal: (orderId: string) => void;
   tutupDialogBatal: () => void;
+  pilihAlasanBatal: (alasan: AlasanBatal) => void;
+  ubahCatatanBatal: (catatan: string) => void;
   sudahKonfirmasiBatal: () => void;
   tutupSpanduk: () => void;
   tutupPeringatanStok: () => void;
@@ -128,11 +181,15 @@ export type KeadaanCashier = {
 /**
  * Mengurus seluruh logika layar Cashier.
  *
+ * Input: daftar menu dari panel Sisa stok (dipakai untuk petunjuk stok per item
+ *        pesanan). Boleh kosong: kalau panelnya belum termuat, petunjuk stok
+ *        tidak ditampilkan dan tidak ada yang diblokir.
  * Output: KeadaanCashier yang diteruskan ke komponen tampilan.
  *
  * Cara kerja polling:
  *   - Muat sekali di awal.
- *   - Setelah itu ulangi setiap 3 detik, sampai halaman ditutup.
+ *   - Setelah itu ulangi setiap POLLING_DAFTAR_PESANAN_MS (2 detik), sampai
+ *     halaman ditutup.
  *   - Kalau gagal, daftar yang sudah tampil TIDAK dihapus. Cashier masih bisa
  *     mengonfirmasi atau membatalkan pesanan yang sudah tampil, dan pesan kecil
  *     "gagal memuat, mencoba lagi" muncul.
@@ -142,7 +199,9 @@ export type KeadaanCashier = {
  * order yang tadi masih diantre bisa dibatalkan Cashier lain. Jadi poll terus
  * sampai halaman ditutup (docs/api-contract.md bagian 5).
  */
-export function useDaftarPesanan(): KeadaanCashier {
+export function useDaftarPesanan(
+  menuStok: readonly MenuStokRingkas[] = [],
+): KeadaanCashier {
   // Daftar mentah dari server, dipakai untuk deteksi pesanan baru.
   const [daftar, setDaftar] = useState<PesananCashier[]>([]);
   const [jumlahMenunggu, setJumlahMenunggu] = useState(0);
@@ -153,6 +212,11 @@ export function useDaftarPesanan(): KeadaanCashier {
   const [pesan, setPesan] = useState<string | null>(null);
   const [sedangAksi, setSedangAksi] = useState<string | null>(null);
   const [dialogBatalUntuk, setDialogBatalUntuk] = useState<string | null>(null);
+  // Alasan dan catatan pembatalan. Keduanya selalu direset saat popup dibuka,
+  // jadi tidak ada alasan bawaan dari pembatalan sebelumnya.
+  const [alasanBatalDipilih, setAlasanBatalDipilih] =
+    useState<AlasanBatal | null>(null);
+  const [catatanBatal, setCatatanBatal] = useState("");
   const [metodeDipilih, setMetodeDipilih] = useState<
     Record<string, MetodeBayar>
   >({});
@@ -269,7 +333,8 @@ export function useDaftarPesanan(): KeadaanCashier {
     };
   }, [muatDaftar]);
 
-  // Polling: ulangi setiap 3 detik selama halaman terbuka.
+  // Polling: ulangi selama halaman terbuka. Jeda diambil dari konstanta di
+  // polling.ts (2 detik) supaya tidak ada angka yang ditulis di dua tempat.
   useEffect(() => {
     const timer = setInterval(() => {
       // Kalau halaman sudah ditinggalkan, berhenti.
@@ -278,7 +343,7 @@ export function useDaftarPesanan(): KeadaanCashier {
       }
 
       void muatDaftar();
-    }, INTERVAL_POLLING_MS);
+    }, POLLING_DAFTAR_PESANAN_MS);
 
     // Hapus interval saat komponen dilepas (pindah halaman atau keluar).
     return () => {
@@ -381,10 +446,36 @@ export function useDaftarPesanan(): KeadaanCashier {
    *
    * Input: id pesanan yang akan dibatalkan.
    * Output: void.
+   *
+   * Alasan dan catatan selalu dikosongkan saat popup dibuka: tidak ada nilai
+   * bawaan, jadi Cashier wajib memilih alasannya sendiri untuk pesanan ini
+   * (docs/order-flow.md bagian 6 acceptance criteria 22).
    */
   function bukaDialogBatal(orderId: string): void {
     setDialogBatalUntuk(orderId);
+    setAlasanBatalDipilih(null);
+    setCatatanBatal("");
     setPesan(null);
+  }
+
+  /**
+   * Memilih alasan pembatalan di dalam popup.
+   *
+   * Input: nilai alasan yang dipilih Cashier.
+   * Output: void.
+   */
+  function pilihAlasanBatal(alasan: AlasanBatal): void {
+    setAlasanBatalDipilih(alasan);
+  }
+
+  /**
+   * Mengubah isian catatan pembatalan.
+   *
+   * Input: teks catatan yang diketik.
+   * Output: void.
+   */
+  function ubahCatatanBatal(catatan: string): void {
+    setCatatanBatal(catatan);
   }
 
   /**
@@ -394,18 +485,23 @@ export function useDaftarPesanan(): KeadaanCashier {
    */
   function tutupDialogBatal(): void {
     setDialogBatalUntuk(null);
+    setAlasanBatalDipilih(null);
+    setCatatanBatal("");
   }
 
   /**
-   * Membatalkan pesanan setelah Cashier memilih "Ya".
+   * Membatalkan pesanan setelah Cashier memilih alasannya dan menekan
+   * "Ya, batalkan".
    *
    * Output: void.
    *
    * Cara kerja:
-   *   1. Panggil POST /api/cashier/orders/[id]/cancel.
-   *   2. Kalau ORDER_STATUS_CHANGED (mis. Barista sudah menekan Mulai), tampilkan
+   *   1. Pengaman: kalau alasan dan catatannya belum boleh dikirim, batalkan.
+   *      Tombolnya juga sudah nonaktif di tampilan, jadi ini pengaman kedua.
+   *   2. Panggil POST /api/cashier/orders/[id]/cancel dengan alasan dan catatan.
+   *   3. Kalau ORDER_STATUS_CHANGED (mis. Barista sudah menekan Mulai), tampilkan
    *      pesannya lalu muat ulang daftar.
-   *   3. Kalau berhasil, muat ulang supaya pesanan pindah ke kelompok Selesai.
+   *   4. Kalau berhasil, muat ulang supaya pesanan pindah ke kelompok Selesai.
    */
   async function sudahKonfirmasiBatal(): Promise<void> {
     const orderId = dialogBatalUntuk;
@@ -415,13 +511,27 @@ export function useDaftarPesanan(): KeadaanCashier {
       return;
     }
 
+    // Pengaman: alasan wajib, dan "lainnya" wajib pakai catatan.
+    const cek = periksaAlasanBatal(alasanBatalDipilih, catatanBatal);
+    if (!cek.boleh || alasanBatalDipilih === null) {
+      return;
+    }
+
     setDialogBatalUntuk(null);
     setSedangAksi(orderId);
     setPesan(null);
 
-    const hasil = await batalkanPesanan(orderId);
+    // Catatan yang cuma spasi dianggap tidak ada, jadi dikirim sebagai null.
+    const catatanBersih = catatanBatal.trim();
+    const hasil = await batalkanPesanan(
+      orderId,
+      alasanBatalDipilih,
+      catatanBersih === "" ? null : catatanBersih,
+    );
 
     setSedangAksi(null);
+    setAlasanBatalDipilih(null);
+    setCatatanBatal("");
 
     if (berhentiRef.current) {
       return;
@@ -474,6 +584,10 @@ export function useDaftarPesanan(): KeadaanCashier {
   // tidak ikut hilang saat dipetakan ke bentuk tampilan.
   const kelompokRingkas = kelompokkanPesanan(daftar.map(kePesananRingkas));
 
+  // Apakah alasan dan catatan pembatalan yang sedang dipilih sudah boleh
+  // dikirim. Dipakai untuk status tombol "Ya, batalkan" dan pesan kecilnya.
+  const cekAlasanBatal = periksaAlasanBatal(alasanBatalDipilih, catatanBatal);
+
   // Pasangkan lagi setiap pesanan ringkas dengan pesanan aslinya, supaya data
   // lengkapnya (items, total, payment) tetap ada.
   const mencariAsli = (ringkas: PesananRingkas): PesananCashier => {
@@ -485,13 +599,13 @@ export function useDaftarPesanan(): KeadaanCashier {
 
   return {
     menunggu: kelompokRingkas.menunggu.map((satu) =>
-      siapkanUntukTampil(satu, mencariAsli(satu)),
+      siapkanUntukTampil(satu, mencariAsli(satu), menuStok),
     ),
     dikerjakan: kelompokRingkas.dikerjakan.map((satu) =>
-      siapkanUntukTampil(satu, mencariAsli(satu)),
+      siapkanUntukTampil(satu, mencariAsli(satu), menuStok),
     ),
     selesai: kelompokRingkas.selesai.map((satu) =>
-      siapkanUntukTampil(satu, mencariAsli(satu)),
+      siapkanUntukTampil(satu, mencariAsli(satu), menuStok),
     ),
     jumlahMenunggu: jumlahMenunggu,
     spandukBaru: spandukBaru,
@@ -501,6 +615,11 @@ export function useDaftarPesanan(): KeadaanCashier {
     pesan: pesan,
     sedangAksi: sedangAksi,
     dialogBatalUntuk: dialogBatalUntuk,
+    alasanBatalDipilih: alasanBatalDipilih,
+    catatanBatal: catatanBatal,
+    pilihanAlasan: pilihanAlasanBatal(),
+    bolehKirimBatal: cekAlasanBatal.boleh,
+    pesanAlasanBatal: cekAlasanBatal.pesan,
     metodeDipilih: metodeDipilih,
     pilihMetodeBayar: pilihMetodeBayar,
     konfirmasi: (orderId: string) => {
@@ -508,6 +627,8 @@ export function useDaftarPesanan(): KeadaanCashier {
     },
     bukaDialogBatal: bukaDialogBatal,
     tutupDialogBatal: tutupDialogBatal,
+    pilihAlasanBatal: pilihAlasanBatal,
+    ubahCatatanBatal: ubahCatatanBatal,
     sudahKonfirmasiBatal: () => {
       void sudahKonfirmasiBatal();
     },
@@ -580,6 +701,8 @@ function kePesananCashier(ringkas: PesananRingkas): PesananCashier {
     occurredAt: ringkas.createdAt,
     isManualTime: false,
     confirmedAt: null,
+    cancelReason: null,
+    cancelNote: null,
     items: [],
     payment: null,
   };
@@ -599,7 +722,13 @@ function kePesananCashier(ringkas: PesananRingkas): PesananCashier {
 function siapkanUntukTampil(
   ringkas: PesananRingkas,
   lengkap: PesananCashier,
+  menuStok: readonly MenuStokRingkas[],
 ): PesananTampil {
+  // Petunjuk stok hanya berguna untuk pesanan yang menunggu konfirmasi. Di
+  // kelompok lain Cashier sudah tidak mengambil keputusan, jadi tidak perlu
+  // ditambah agar layar tidak semakin ramai.
+  const perluPetunjuk = lengkap.status === STATUS_MENUNGGU;
+
   return {
     orderId: lengkap.orderId,
     nomorAntrean: lengkap.queueNumber,
@@ -615,15 +744,57 @@ function siapkanUntukTampil(
     waktuManual: lengkap.isManualTime,
     items: lengkap.items.map((satuItem) => ({
       nama: satuItem.name,
+      menuItemId: satuItem.menuItemId ?? null,
       jumlah: satuItem.qty,
       catatan: satuItem.note,
       harga: satuItem.price,
       subtotal: satuItem.subtotal,
+      petunjukStok: siapkanPetunjukStok(
+        perluPetunjuk ? menuStok : [],
+        satuItem.menuItemId ?? null,
+        satuItem.qty,
+      ),
     })),
     total: lengkap.total,
     teksStatus: teksStatusUntukCashier(lengkap.status),
     metodeBayarTampil: metodeBayarUntukTampil(lengkap),
+    labelAlasanBatal: labelAlasanBatal(lengkap.cancelReason ?? null),
+    catatanAlasanBatal: lengkap.cancelNote ?? null,
     status: lengkap.status,
+  };
+}
+
+/**
+ * Menyiapkan petunjuk stok untuk satu item pesanan.
+ *
+ * Input: daftar sisa stok, id menu, dan jumlah yang dipesan.
+ * Output: PetunjukStokItem.
+ *
+ * Tiga kasus yang berbeda sengaja dibedakan di sini:
+ *   - menu punya sisa porsi angka : tampil "sisa N porsi",
+ *   - sisa porsinya 0             : tetap tampil "sisa 0 porsi", supaya
+ *                                   Cashier tahu bahannya benar-benar habis,
+ *   - menu tanpa resep (null)     : TIDAK ada teks sama sekali, dan tidakCukup
+ *                                   bernilai false. Menu tanpa resep tidak punya
+ *                                   bahan, jadi tidak pernah "tidak cukup".
+ *
+ * Kalau panel sisa stok belum termuat, daftarnya kosong. Dalam keadaan itu
+ * tidakCukup bernilai false: lebih baik tidak memberi peringatan daripada
+ * memberi peringatan yang salah.
+ */
+function siapkanPetunjukStok(
+  menuStok: readonly MenuStokRingkas[],
+  menuItemId: string | null,
+  jumlah: number,
+): PetunjukStokItem {
+  const sisa = cariSisaPorsi(menuStok, menuItemId);
+
+  return {
+    teksSisaPorsi:
+      sisa === null
+        ? null
+        : teksStok.petunjukSisa.replace("{jumlah}", String(sisa)),
+    tidakCukup: stokTidakCukup(menuStok, menuItemId, jumlah),
   };
 }
 

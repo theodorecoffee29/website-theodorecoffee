@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest) {
   const { data: daftarOrder, error: errorOrder } = await getAdminClient()
     .from("orders")
     .select(
-      "id, queue_number, queue_date, customer_name, source, status, total, created_at, confirmed_at, occurred_at, is_manual_time, order_items(name_snapshot, price_snapshot, qty, note, subtotal), payments(method, amount, voided_at)",
+      "id, queue_number, queue_date, customer_name, source, status, total, created_at, confirmed_at, occurred_at, is_manual_time, cancel_reason, cancel_note, order_items(id, menu_item_id, name_snapshot, price_snapshot, qty, note, subtotal), payments(method, amount, voided_at)",
     )
     .eq("queue_date", hariIniWib)
     // Urutan supaya Cashier melihat antrean dari yang paling awal.
@@ -80,8 +80,18 @@ export async function GET(_request: NextRequest) {
     // true kalau occurred_at diisi manual (input belakangan), false kalau order
     // dibuat normal saat itu juga.
     isManualTime: baris.is_manual_time,
+    // Alasan dan catatan pembatalan. Keduanya null kalau ordernya belum
+    // dibatalkan (dan untuk order lama yang belum punya alasan).
+    // Cashier butuh alasannya supaya bisa melihat "Dibatalkan: Stok habis" di
+    // kelompok Selesai dan dibatalkan (docs/order-flow.md bagian 6 AC 22).
+    cancelReason: baris.cancel_reason,
+    cancelNote: baris.cancel_note,
     items: Array.isArray(baris.order_items)
       ? baris.order_items.map((item) => ({
+          // menuItemId ikut dikirim supaya tampilan bisa mencocokkan item ini
+          // dengan sisa porsi menunya di panel Sisa stok. Tanpa itu, item
+          // hanya bisa dicocokkan lewat nama, yang bisa sama untuk dua menu.
+          menuItemId: item.menu_item_id,
           name: item.name_snapshot,
           price: item.price_snapshot,
           qty: item.qty,

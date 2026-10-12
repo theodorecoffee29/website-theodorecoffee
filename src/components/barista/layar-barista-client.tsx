@@ -14,6 +14,8 @@
 import { useEffect } from "react";
 import { LayarBarista } from "./layar-barista";
 import { useAntreanBarista } from "@/features/barista/use-antrean-barista";
+import { POLLING_SISA_STOK_MS } from "@/features/barista/polling";
+import { useSisaStok } from "@/features/stok/use-sisa-stok";
 import { teksBarista } from "@/features/barista/teks";
 
 // Props dari halaman server.
@@ -35,6 +37,11 @@ export function LayarBaristaClient({
   namaAkun,
   keluar,
 }: PropsLayarBaristaClient) {
+  // Panel sisa stok (hanya baca). Jeda pollingnya 10 detik, lebih lambat daripada
+  // polling antrean karena Barista tidak memakainya untuk mengambil keputusan
+  // (src/features/barista/polling.ts).
+  const sisaStok = useSisaStok(POLLING_SISA_STOK_MS);
+
   const keadaan = useAntreanBarista();
 
   // Judul tab browser: menampilkan jumlah pesanan Baru masuk, supaya Barista
@@ -58,5 +65,12 @@ export function LayarBaristaClient({
     };
   }, [keadaan.jumlahBaruMasuk]);
 
-  return <LayarBarista keadaan={keadaan} namaAkun={namaAkun} keluar={keluar} />;
+  return (
+    <LayarBarista
+      keadaan={keadaan}
+      sisaStok={sisaStok}
+      namaAkun={namaAkun}
+      keluar={keluar}
+    />
+  );
 }

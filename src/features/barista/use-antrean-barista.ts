@@ -30,6 +30,7 @@ import {
   type PesananAntrean,
 } from "./api";
 import { kelompokkanAntrean, teksStatusBarista } from "./antrean-barista";
+import { POLLING_ANTREAN_MS } from "./polling";
 import {
   cariPesananBaru,
   hitungBaruMasuk,
@@ -38,10 +39,6 @@ import {
 import { siapkanUntukTampil } from "./siapkan-tampil";
 import { teksBarista } from "./teks";
 import type { PesananUntukTampil } from "./siapkan-tampil";
-
-// Berapa milidetik satu jeda polling. docs/api-contract.md bagian 5 menetapkan
-// layar Barista memanggil get_barista_queue setiap 3 detik.
-export const INTERVAL_POLLING_MS = 3000;
 
 // Berapa kali polling gagal berturut-turut sebelum satu log error dikirim ke
 // server, supaya log error tidak dibanjiri ketika internet sedang putus.
@@ -219,7 +216,7 @@ export function useAntreanBarista(): KeadaanBarista {
       }
 
       void muatAntrean();
-    }, INTERVAL_POLLING_MS);
+    }, POLLING_ANTREAN_MS);
 
     // Hapus interval saat komponen dilepas (pindah halaman atau keluar).
     return () => {

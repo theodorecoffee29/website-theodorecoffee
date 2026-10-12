@@ -255,6 +255,8 @@ export type Database = {
           cancelled_by: string | null;
           cancelled_by_role:
             Database["public"]["Enums"]["order_cancel_role"] | null;
+          cancel_note: string | null;
+          cancel_reason: string | null;
           confirmed_at: string | null;
           confirmed_by: string | null;
           created_at: string;
@@ -278,6 +280,8 @@ export type Database = {
           cancelled_by?: string | null;
           cancelled_by_role?:
             Database["public"]["Enums"]["order_cancel_role"] | null;
+          cancel_note?: string | null;
+          cancel_reason?: string | null;
           confirmed_at?: string | null;
           confirmed_by?: string | null;
           created_at?: string;
@@ -301,6 +305,8 @@ export type Database = {
           cancelled_by?: string | null;
           cancelled_by_role?:
             Database["public"]["Enums"]["order_cancel_role"] | null;
+          cancel_note?: string | null;
+          cancel_reason?: string | null;
           confirmed_at?: string | null;
           confirmed_by?: string | null;
           created_at?: string;
@@ -556,7 +562,16 @@ export type Database = {
         Returns: Json;
       };
       cancel_order: {
-        Args: { p_actor_id: string; p_meta?: Json; p_order_id: string };
+        Args: {
+          p_actor_id: string;
+          // p_reason dan p_note boleh kosong: untuk customer (p_actor_id null)
+          // database mengisi sendiri alasan "diminta_customer". Lihat migrasi
+          // 20261010073525_cancel_reason_stock_overview.sql.
+          p_note?: string | null;
+          p_reason?: string | null;
+          p_meta?: Json;
+          p_order_id: string;
+        };
         Returns: Json;
       };
       confirm_order: {
@@ -598,6 +613,13 @@ export type Database = {
       };
       get_menu: { Args: never; Returns: Json };
       get_order_status: { Args: { p_order_id: string }; Returns: Json };
+      // Ringkasan sisa stok untuk cashier, barista, dan admin (hanya baca).
+      // Perannya diperiksa di dalam fungsi lewat require_staff. Lihat migrasi
+      // 20261010073525_cancel_reason_stock_overview.sql.
+      get_stock_overview: {
+        Args: { p_actor_id: string };
+        Returns: Json;
+      };
       menu_item_available: {
         Args: { p_menu_item_id: string };
         Returns: boolean;

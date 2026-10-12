@@ -76,6 +76,10 @@ declare
   v_porsi_1        integer;
   v_porsi_2        integer;
   v_jumlah_nonaktif integer;
+  -- Bagian (g) butuh counters terpisah: satu untuk "menu tanpa resep punya
+  -- portionsLeft null" dan satu lagi untuk "bahan minus isNegative".
+  v_jumlah_null_resep integer;
+  v_jumlah_negatif    integer;
   v_hasil          jsonb;
   v_cek            jsonb;
   v_teks_hasil     text;
@@ -85,6 +89,18 @@ declare
   v_nama_cek       text;
   v_didapat        text;
   v_lolos          boolean;
+
+  -- Isi exception yang ditangkap, supaya pesan, detail, dan konteks bisa
+  -- dicetak apa adanya kalau tes GAGAL.
+  v_pesan          text;
+  v_detail         text;
+  v_konteks        text;
+
+  -- Kolom orders.cancel_reason dan cancel_note dibaca sebagai TEKS, bukan
+  -- jsonb: nilainya enum dan teks bebas, dan jsonb hanya menerima JSON yang
+  -- sah. Lihat catatan di pemeriksaan (c).
+  v_reason_teks    text;
+  v_note_teks      text;
 
   -- Daftar hasil seluruh pemeriksaan, dan penghitungnya.
   v_daftar_hasil   text[] := array[]::text[];
@@ -196,29 +212,57 @@ begin
     ) into v_hasil;
     v_order_a := (v_hasil ->> 'order_id')::uuid;
 
-    -- Catatan urutan parameter cancel_order yang baru:
-    -- orderId, actorId, reason, note, meta. reason dikosongkan.
+    -- Argumen BERNAMA dipakai di seluruh skrip, bukan posisi, supaya urutannya
+    -- tidak bisa tertukar dan jenis argumennya selalu jelas.
+    -- reason dikosongkan: staf wajib memilih alasan.
+    v_pesan := '(tidak ada error)';
+    v_detail := null;
+    v_konteks := null;
     begin
-      perform public.cancel_order(v_order_a::text, v_aktor, null, null, '{}'::jsonb);
-      v_didapat := 'tidak ditolak (fungsi berhasil jalan)';
+      perform public.cancel_order(
+        p_order_id => v_order_a::text,
+        p_actor_id => v_aktor,
+        p_reason   => null,
+        p_note     => null,
+        p_meta     => '{}'::jsonb
+      );
+      v_pesan := 'tidak ditolak (fungsi berhasil jalan)';
     exception when others then
-      v_didapat := sqlerrm;
+      get stacked diagnostics
+        v_pesan   = message_text,
+        v_detail  = pg_exception_detail,
+        v_konteks = pg_exception_context;
     end;
 
-    -- Status order harus tetap menunggu_konfirmasi karena dibatalkan.
-    select o.status into v_teks_hasil
+    -- Status order harus tetap menunggu_konfirmasi karena tidak dibatalkan.
+    select o.status::text into v_teks_hasil
     from public.orders as o where o.id = v_order_a;
 
-    -- Pesan error harus menyebut "reason" supaya Cashier tahu apa yang kurang.
-    v_didapat := format('pesan = %s | status order = %s', v_didapat, v_teks_hasil);
+    -- Pesan error harus persis VALIDATION_FAILED dan detailnya menyebut
+    -- "reason" supaya Cashier tahu apa yang kurang. Dicetak lengkap, termasuk
+    -- detail dan konteksnya, supaya kalau gagal ada bahan troubleshoot.
+    v_didapat := format(
+      'pesan = %s | detail = %s | konteks = %s | status order = %s',
+      v_pesan,
+      coalesce(v_detail, '(kosong)'),
+      coalesce(v_konteks, '(kosong)'),
+      v_teks_hasil
+    );
 
     v_lolos := (
-      v_didapat like 'VALIDATION_FAILED%'
-      and lower(v_didapat) like '%reason%'
+      v_pesan like 'VALIDATION_FAILED%'
+      and lower(coalesce(v_detail, '')) like '%reason%'
       and v_teks_hasil = 'menunggu_konfirmasi'
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -244,27 +288,53 @@ begin
     ) into v_hasil;
     v_order_b := (v_hasil ->> 'order_id')::uuid;
 
-    -- reason = lainnya tapi note kosong (dan juga coba note yang cuma spasi).
+    -- reason = lainnya tapi note cuma spasi (setelah dipangkas jadi kosong).
+    v_pesan := '(tidak ada error)';
+    v_detail := null;
+    v_konteks := null;
     begin
       perform public.cancel_order(
-        v_order_b::text, v_aktor, 'lainnya'::public.order_cancel_reason, '   ', '{}'::jsonb
+        p_order_id => v_order_b::text,
+        p_actor_id => v_aktor,
+        p_reason   => 'lainnya'::public.order_cancel_reason,
+        p_note     => '   ',
+        p_meta     => '{}'::jsonb
       );
-      v_didapat := 'tidak ditolak (fungsi berhasil jalan)';
+      v_pesan := 'tidak ditolak (fungsi berhasil jalan)';
     exception when others then
-      v_didapat := sqlerrm;
+      get stacked diagnostics
+        v_pesan   = message_text,
+        v_detail  = pg_exception_detail,
+        v_konteks = pg_exception_context;
     end;
 
-    select o.status into v_teks_hasil
+    select o.status::text into v_teks_hasil
     from public.orders as o where o.id = v_order_b;
 
-    v_didapat := format('pesan = %s | status order = %s', v_didapat, v_teks_hasil);
+    v_didapat := format(
+      'pesan = %s | detail = %s | konteks = %s | status order = %s',
+      v_pesan,
+      coalesce(v_detail, '(kosong)'),
+      coalesce(v_konteks, '(kosong)'),
+      v_teks_hasil
+    );
 
+    -- Pesan harus persis VALIDATION_FAILED dan detailnya menyebut "note"
+    -- (huruf besar-kecil tidak berpengaruh).
     v_lolos := (
-      v_didapat like 'VALIDATION_FAILED%'
+      v_pesan like 'VALIDATION_FAILED%'
+      and lower(coalesce(v_detail, '')) like '%note%'
       and v_teks_hasil = 'menunggu_konfirmasi'
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -284,27 +354,41 @@ begin
     -- Pakai order dari (b): pembatalan sebelumnya ditolak, jadi order ini masih
     -- menunggu_konfirmasi.
     perform public.cancel_order(
-      v_order_b::text, v_aktor, 'stok_habis'::public.order_cancel_reason, null, '{}'::jsonb
+      p_order_id => v_order_b::text,
+      p_actor_id => v_aktor,
+      p_reason   => 'stok_habis'::public.order_cancel_reason,
+      p_note     => null,
+      p_meta     => '{}'::jsonb
     );
 
-    select o.status, o.cancel_reason, o.cancel_note
-    into v_teks_hasil, v_hasil, v_cek
+    -- cancel_reason dan cancel_note dibaca sebagai TEKS. Dua kolom ini enum dan
+    -- teks bebas; kalau dibaca ke variabel jsonb, PostgreSQL mencoba mengubahnya
+    -- jadi JSON dan gagal dengan "invalid input syntax for type json".
+    select o.status::text, o.cancel_reason::text, o.cancel_note
+    into v_teks_hasil, v_reason_teks, v_note_teks
     from public.orders as o where o.id = v_order_b;
 
     v_didapat := format(
       'status = %s, cancel_reason = %s, cancel_note kosong = %s',
-      v_teks_hasil, v_hasil, (v_cek is null)
+      v_teks_hasil, v_reason_teks, (v_note_teks is null)
     );
 
     -- cancel_reason harus persis stok_habis, dan cancel_note tetap kosong
     -- karena alasan ini tidak wajib berketerangan.
     v_lolos := (
       v_teks_hasil = 'dibatalkan'
-      and v_hasil::text = 'stok_habis'
-      and v_cek is null
+      and v_reason_teks = 'stok_habis'
+      and v_note_teks is null
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -333,30 +417,38 @@ begin
     -- Sengaja mengirim reason lain dan note, untuk membuktikan keduanya
     -- DIABAIKAN oleh customer, bukan dipakai dan bukan ditolak.
     perform public.cancel_order(
-      v_order_c::text,
-      null,
-      'salah_input'::public.order_cancel_reason,
-      'Ini harus diabaikan',
-      '{}'::jsonb
+      p_order_id => v_order_c::text,
+      p_actor_id => null,
+      p_reason   => 'salah_input'::public.order_cancel_reason,
+      p_note     => 'Ini harus diabaikan',
+      p_meta     => '{}'::jsonb
     );
 
-    select o.status, o.cancel_reason, o.cancel_note
-    into v_teks_hasil, v_hasil, v_cek
+    -- Dibaca sebagai teks, bukan jsonb (lihat catatan di pemeriksaan (c)).
+    select o.status::text, o.cancel_reason::text, o.cancel_note
+    into v_teks_hasil, v_reason_teks, v_note_teks
     from public.orders as o where o.id = v_order_c;
 
     v_didapat := format(
       'status = %s, cancel_reason = %s, cancel_note kosong = %s',
-      v_teks_hasil, v_hasil, (v_cek is null)
+      v_teks_hasil, v_reason_teks, (v_note_teks is null)
     );
 
     -- Alasan harus diminta_customer, bukan yang dikirim, dan note harus kosong.
     v_lolos := (
       v_teks_hasil = 'dibatalkan'
-      and v_hasil::text = 'diminta_customer'
-      and v_cek is null
+      and v_reason_teks = 'diminta_customer'
+      and v_note_teks is null
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -408,7 +500,14 @@ begin
       and not (v_teks_hasil like '%cancelNote%')
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -449,7 +548,11 @@ begin
     from public.ingredients as i where i.id = v_bahan_a;
 
     perform public.cancel_order(
-      v_order_e::text, v_aktor, 'pembayaran_tidak_diterima'::public.order_cancel_reason, null, '{}'::jsonb
+      p_order_id => v_order_e::text,
+      p_actor_id => v_aktor,
+      p_reason   => 'pembayaran_tidak_diterima'::public.order_cancel_reason,
+      p_note     => null,
+      p_meta     => '{}'::jsonb
     );
 
     select i.stock_qty into v_stok_sekarang
@@ -472,7 +575,14 @@ begin
       and v_jumlah = 1
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -510,7 +620,10 @@ begin
     -- Menu 3 tanpa resep: kunci portionsLeft HARUS ada, tapi nilainya null.
     -- jsonb yang bernilai null dibaca sebagai teks kosong, jadi kosong di sini
     -- berarti "portionsLeft: null" dan bukan "menunya tidak ada".
-    select count(*) into v_jumlah
+    -- Counter-nya harus terpisah dari counter isNegative di bawah, kalau tidak
+    -- nilai yang satu menimpa nilai yang lain dan salah satunya tidak pernah
+    -- benar-benar diperiksa.
+    select count(*) into v_jumlah_null_resep
     from jsonb_array_elements(v_cek -> 'menus') as x
     where x ->> 'menuItemId' = v_menu_3::text
       and (x ? 'portionsLeft')
@@ -522,31 +635,46 @@ begin
     where x ->> 'menuItemId' = v_menu_4::text;
 
     -- Bahan harus ikut terbawa, dan bahan minus ditandai.
+    -- stockQty dibaca sebagai TEKS lalu dibandingkan sebagai angka, bukan
+    -- dibandingkan dengan teks '-10'. Kolomnya numeric(12,3), jadi jsonb bisa
+    -- menulisnya sebagai -10.000 dan perbandingan teks seperti '-10' akan
+    -- salah padahal angkanya benar.
     select x ->> 'stockQty' into v_stok_teks
     from jsonb_array_elements(v_cek -> 'ingredients') as x
     where x ->> 'ingredientId' = v_bahan_b::text;
 
-    select count(*) into v_jumlah
+    select count(*) into v_jumlah_negatif
     from jsonb_array_elements(v_cek -> 'ingredients') as x
     where x ->> 'ingredientId' = v_bahan_b::text
       and (x ->> 'isNegative')::boolean;
 
     v_didapat := format(
       'menu 1 (5000/18) = %s porsi, menu 2 (stok -10) = %s porsi, menu tanpa resep punya portionsLeft null = %s, menu nonaktif muncul = %s, bahan minus: stockQty = %s dan isNegative true = %s',
-      v_porsi_1, v_porsi_2, v_jumlah, v_jumlah_nonaktif, v_stok_teks, v_jumlah
+      v_porsi_1, v_porsi_2, v_jumlah_null_resep, v_jumlah_nonaktif,
+      v_stok_teks, v_jumlah_negatif
     );
 
-    -- Empat hal harus benar sekaligus: hitungan porsi, bahan minus jadi 0,
-    -- menu tanpa resep null, dan menu nonaktif tidak muncul.
+    -- Lima hal harus benar sekaligus: hitungan porsi menu 1, bahan minus jadi
+    -- 0 porsi, menu tanpa resep punya portionsLeft null, menu nonaktif tidak
+    -- muncul, dan bahan minus benar-benar ditandai negatif.
     v_lolos := (
       v_porsi_1 = 277
       and v_porsi_2 = 0
-      and v_jumlah = 1
+      and v_jumlah_null_resep = 1
       and v_jumlah_nonaktif = 0
-      and v_stok_teks = '-10'
+      and v_stok_teks is not null
+      and v_stok_teks::numeric = -10
+      and v_jumlah_negatif = 1
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
@@ -577,14 +705,18 @@ begin
     -- peran dari tabel profiles dan tidak menemukan apa pun.
     begin
       perform public.get_stock_overview(null);
-      v_didapat := 'panggilan tanpa akun tidak ditolak (fungsi berhasil jalan)';
+      v_pesan := 'panggilan tanpa akun tidak ditolak (fungsi berhasil jalan)';
     exception when others then
-      v_didapat := sqlerrm;
+      get stacked diagnostics
+        v_pesan   = message_text,
+        v_detail  = pg_exception_detail,
+        v_konteks = pg_exception_context;
     end;
 
     v_didapat := format(
-      'cashier diuji: %s, barista diuji: %s, panggilan tanpa akun: %s',
-      (v_cashier is not null), (v_barista is not null), v_didapat
+      'cashier diuji: %s, barista diuji: %s, panggilan tanpa akun: %s | detail = %s | konteks = %s',
+      (v_cashier is not null), (v_barista is not null), v_pesan,
+      coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
     );
 
     -- Kalau tidak ada Cashier maupun Barista sama sekali, pemeriksaan ini tidak
@@ -598,7 +730,7 @@ begin
       v_jumlah_lewati := v_jumlah_lewati + 1;
     else
       -- Penolakan tanpa akun tetap wajib benar, apa pun keadaan akunnya.
-      v_lolos := (v_didapat like '%FORBIDDEN%');
+      v_lolos := (v_pesan like '%FORBIDDEN%');
       v_total := v_total + 1;
       if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;
       v_daftar_hasil := v_daftar_hasil ||
@@ -608,7 +740,14 @@ begin
           v_didapat);
     end if;
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
     v_total := v_total + 1;
     v_jumlah_gagal := v_jumlah_gagal + 1;
     v_daftar_hasil := v_daftar_hasil ||
@@ -651,7 +790,14 @@ begin
       and not (v_teks_hasil like '%amount%')
     );
   exception when others then
-    v_didapat := 'ERROR TIDAK TERDUGA: ' || sqlerrm;
+    get stacked diagnostics
+      v_pesan   = message_text,
+      v_detail  = pg_exception_detail,
+      v_konteks = pg_exception_context;
+    v_didapat := format(
+      'ERROR TIDAK TERDUGA: %s | detail = %s | konteks = %s',
+      v_pesan, coalesce(v_detail, '(kosong)'), coalesce(v_konteks, '(kosong)')
+    );
   end;
   v_total := v_total + 1;
   if v_lolos then v_jumlah_lolos := v_jumlah_lolos + 1; else v_jumlah_gagal := v_jumlah_gagal + 1; end if;

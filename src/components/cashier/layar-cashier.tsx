@@ -11,19 +11,26 @@ import { KartuPesanan } from "./kartu-pesanan";
 import { DialogBatal } from "./dialog-batal";
 import { FormOrderManual } from "./form-order-manual";
 import { DialogRingkas } from "./dialog-ringkas";
+import { PanelSisaStok } from "@/components/stok/panel-sisa-stok";
 import { teksCashier } from "@/features/cashier/teks";
 import type {
   KeadaanCashier,
   PesananTampil,
 } from "@/features/cashier/use-daftar-pesanan";
 import type { KeadaanFormManual } from "@/features/cashier/use-form-manual";
+import type { KeadaanSisaStok } from "@/features/stok/use-sisa-stok";
 
-// Props layar Cashier. Semuanya berasal dari hook useDaftarPesanan dan
-// useFormOrderManual.
+// Props layar Cashier. Semuanya berasal dari hook useDaftarPesanan,
+// useFormOrderManual, dan useSisaStok.
 export type PropsLayarCashier = {
   keadaan: KeadaanCashier;
   // Keadaan form order manual (bagian atas halaman).
   formManual: KeadaanFormManual;
+  // Keadaan panel sisa stok (dari useSisaStok).
+  sisaStok: KeadaanSisaStok;
+  // Daftar menu untuk panel sisa stok, dipakai juga untuk mencocokkan sisa porsi
+  // di form pesanan manual.
+  menuStok: KeadaanSisaStok["menus"];
   // Nama akun Cashier yang sedang login (untuk ditampilkan di header).
   namaAkun: string;
   // Aksi keluar. Dipanggil dari form di komponen ini.
@@ -33,12 +40,15 @@ export type PropsLayarCashier = {
 /**
  * Menampilkan seluruh isi layar Cashier.
  *
- * Input: keadaan dari hook, keadaan form manual, nama akun, dan aksi keluar.
+ * Input: keadaan dari hook, keadaan form manual, keadaan sisa stok, menu sisa
+ *        stok, nama akun, dan aksi keluar.
  * Output: elemen React.
  */
 export function LayarCashier({
   keadaan,
   formManual,
+  sisaStok,
+  menuStok,
   namaAkun,
   keluar,
 }: PropsLayarCashier) {
@@ -137,9 +147,20 @@ export function LayarCashier({
           </p>
         ) : null}
 
+        {/* Panel sisa stok. Dipakai Cashier untuk memilih order mana yang
+            diterima kalau dua order bersaing untuk stok terakhir
+            (docs/order-flow.md bagian 7 ayat 5). Panel ini hanya informatif:
+            tidak ada tombol yang dinonaktifkan berdasarkan stok. */}
+        <PanelSisaStok
+          menus={sisaStok.menus}
+          ingredients={sisaStok.ingredients}
+          memuat={sisaStok.memuat}
+          gagalMuat={sisaStok.gagalMuat}
+        />
+
         {/* Form order manual. Di atas daftar pesanan, karena dipakai untuk
             pesanan yang sedang dilayani (docs/Order-flow.md bagian 4). */}
-        <FormOrderManual keadaan={formManual} />
+        <FormOrderManual keadaan={formManual} menuStok={menuStok} />
 
         {/* Daftar pesanan hari ini (tiga kelompok). */}
         <BagianKelompok
@@ -237,7 +258,16 @@ export function LayarCashier({
           sedangMemproses={
             keadaan.sedangAksi === pesananSedangDibatalkan.orderId
           }
+          pilihanAlasan={keadaan.pilihanAlasan}
+          // null berarti belum ada alasan yang dipilih: radio tidak ada yang
+          // tercentang dan tombol "Ya, batalkan" tetap nonaktif.
+          alasanDipilih={keadaan.alasanBatalDipilih}
+          catatan={keadaan.catatanBatal}
+          bolehKirim={keadaan.bolehKirimBatal}
+          pesanAlasan={keadaan.pesanAlasanBatal}
           tutupDialog={keadaan.tutupDialogBatal}
+          pilihAlasan={keadaan.pilihAlasanBatal}
+          ubahCatatan={keadaan.ubahCatatanBatal}
           konfirmasiBatal={keadaan.sudahKonfirmasiBatal}
         />
       ) : null}

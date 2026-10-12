@@ -116,7 +116,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 - **Error:** `VALIDATION_FAILED`, `MENU_UNAVAILABLE`, `FORBIDDEN`, `INTERNAL_ERROR`
 
 ### get_stock_overview (Cashier, Barista, Admin)
-- **Input:** tidak ada
+- **Input:** tidak ada dari klien. Server mengirim `p_actor_id` (staf yang login), dan database memeriksa bahwa akunnya aktif dan berperan cashier, barista, atau admin (selain itu `FORBIDDEN`).
 - **Output:** `{ menus: [{ menuItemId, name, portionsLeft }], ingredients: [{ ingredientId, name, unit, stockQty, isNegative }] }`
 - `portionsLeft`: bilangan bulat 0 atau lebih (stok dibagi takaran, dibulatkan ke bawah, bahan yang paling sedikit menentukan), atau kosong (`null`) untuk menu tanpa resep. Stok minus dihitung 0 porsi. Hanya menu aktif.
 - Tidak memuat harga atau data pembayaran. Hanya baca.

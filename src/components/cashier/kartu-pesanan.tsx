@@ -1,4 +1,4 @@
-// File ini: komponen tampilan untuk layar Cashier.
+﻿// File ini: komponen tampilan untuk layar Cashier.
 //
 // Komponen ini HANYA menerima props dan menampilkannya; tidak memanggil API
 // (sesuai aturan di AGENTS.md bagian "Tampilan"). Semua logika polling,
@@ -10,6 +10,7 @@
 import type { MetodeBayar } from "@/features/cashier/api";
 import type { PesananTampil } from "@/features/cashier/use-daftar-pesanan";
 import { teksCashier } from "@/features/cashier/teks";
+import { teksStok } from "@/features/stok/teks";
 
 // Props untuk satu kartu pesanan.
 type PropsKartuPesanan = {
@@ -99,7 +100,9 @@ export function KartuPesanan({
       </p>
 
       {/* Daftar item: nama, jumlah, catatan, dan subtotal. Harga tampil karena
-          Cashier boleh melihat harga (docs/pemissions.md bagian 2). */}
+          Cashier boleh melihat harga (docs/pemissions.md bagian 2).
+          Di samping tiap item juga ada petunjuk sisa porsi menunya, untuk
+          pesanan yang menunggu konfirmasi. */}
       <div className="mt-3">
         <p className="text-sm text-gray-600">{teksCashier.order.labelItem}</p>
         <ul className="mt-1 space-y-1">
@@ -113,7 +116,26 @@ export function KartuPesanan({
               {satuItem.catatan ? (
                 <span className="text-xs text-gray-600">
                   {" "}
-                  — {teksCashier.order.labelCatatan}: {satuItem.catatan}
+                  &mdash; {teksCashier.order.labelCatatan}: {satuItem.catatan}
+                </span>
+              ) : null}
+
+              {/* Petunjuk sisa porsi. Hanya muncul kalau panel sisa stok sudah
+                  punya data untuk menu ini. */}
+              {satuItem.petunjukStok.teksSisaPorsi !== null ? (
+                <span className="ml-2 text-xs text-gray-600">
+                  {satuItem.petunjukStok.teksSisaPorsi}
+                </span>
+              ) : null}
+
+              {/* Peringatan stok. PENTING: ini hanya PETUNUK dan tidak
+                  memblokir tombol Konfirmasi di bawah
+                  (docs/order-flow.md bagian 7: tidak ada penolakan otomatis
+                  karena stok). Cashier tetap boleh mengonfirmasi; stok boleh
+                  jadi minus dan muncul peringatan setelah konfirmasi. */}
+              {satuItem.petunjukStok.tidakCukup ? (
+                <span className="ml-2 rounded bg-amber-100 px-1 py-0.5 text-xs font-semibold text-amber-900">
+                  {teksStok.petunjukTidakCukup}
                 </span>
               ) : null}
             </li>
@@ -204,6 +226,28 @@ export function KartuPesanan({
       {diAntrean ? (
         <p className="mt-1 text-xs text-gray-600">
           {teksCashier.dialogBatal.keteranganSudahDikerjakan}
+        </p>
+      ) : null}
+
+      {/* Alasan pembatalan untuk pesanan yang sudah dibatalkan. Cashier perlu
+          tahu ini supaya bisa menjelaskan ke customer kalau ditanya
+          (docs/order-flow.md bagian 6 acceptance criteria 22). */}
+      {pesanan.labelAlasanBatal !== null ? (
+        <p className="mt-2 text-sm text-gray-700">
+          {teksCashier.alasanBatal.teksDibatalkan.replace(
+            "{alasan}",
+            pesanan.labelAlasanBatal,
+          )}
+        </p>
+      ) : null}
+
+      {/* Catatan alasan pembatalan, kalau pesanan ini punya catatan. */}
+      {pesanan.catatanAlasanBatal !== null ? (
+        <p className="mt-1 text-xs text-gray-600">
+          {teksCashier.alasanBatal.catatanPembatalan.replace(
+            "{catatan}",
+            pesanan.catatanAlasanBatal,
+          )}
         </p>
       ) : null}
     </li>

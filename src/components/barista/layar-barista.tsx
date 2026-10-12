@@ -11,12 +11,17 @@
 // urutan yang diterimanya.
 
 import { KartuPesanan } from "./kartu-pesanan";
+import { PanelSisaStok } from "@/components/stok/panel-sisa-stok";
 import { teksBarista } from "@/features/barista/teks";
 import type { KeadaanBarista } from "@/features/barista/use-antrean-barista";
+import type { KeadaanSisaStok } from "@/features/stok/use-sisa-stok";
 
-// Props layar Barista. Semuanya berasal dari hook useAntreanBarista.
+// Props layar Barista. Semuanya berasal dari hook useAntreanBarista dan
+// useSisaStok.
 export type PropsLayarBarista = {
   keadaan: KeadaanBarista;
+  // Keadaan panel sisa stok (hanya baca).
+  sisaStok: KeadaanSisaStok;
   // Nama akun Barista yang sedang login (untuk ditampilkan di header).
   namaAkun: string;
   // Aksi keluar. Dipanggil dari tombol di komponen ini.
@@ -26,10 +31,18 @@ export type PropsLayarBarista = {
 /**
  * Menampilkan seluruh isi layar Barista.
  *
- * Input: keadaan dari hook, nama akun, dan aksi keluar.
+ * Input: keadaan dari hook, keadaan panel sisa stok, nama akun, dan aksi keluar.
  * Output: elemen React.
+ *
+ * CATATAN KEAMANAN: layar ini TIDAK memuat harga, total, maupun pembayaran
+ * (docs/pemissions.md bagian 2). Panel sisa stok juga tidak memuatnya.
  */
-export function LayarBarista({ keadaan, namaAkun, keluar }: PropsLayarBarista) {
+export function LayarBarista({
+  keadaan,
+  sisaStok,
+  namaAkun,
+  keluar,
+}: PropsLayarBarista) {
   return (
     <main className="min-h-screen bg-gray-50 p-4">
       <div className="mx-auto max-w-3xl space-y-4">
@@ -49,6 +62,18 @@ export function LayarBarista({ keadaan, namaAkun, keluar }: PropsLayarBarista) {
             {teksBarista.tombol.keluar}
           </button>
         </header>
+
+        {/* Panel sisa stok (hanya baca). Barista memakainya untuk menyiapkan
+            bahan, bukan untuk mengambil keputusan apa pun, jadi tidak ada
+            tombol yang dinonaktifkan berdasarkan panel ini. Panelnya sama
+            dengan yang dipakai Cashier, dan tidak memuat harga maupun
+            pembayaran (docs/pemissions.md bagian 2). */}
+        <PanelSisaStok
+          menus={sisaStok.menus}
+          ingredients={sisaStok.ingredients}
+          memuat={sisaStok.memuat}
+          gagalMuat={sisaStok.gagalMuat}
+        />
 
         {/* Spanduk pesanan baru. Tanpa suara, hanya teks (docs/prd.md bagian 5:
             notifikasi suara di luar V1). */}

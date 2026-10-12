@@ -45,12 +45,21 @@ export type ItemStatusOrder = {
 };
 
 // Hasil GET /api/orders/[id]/status (fungsi get_order_status).
+//
+// cancelReason dan cancelNote hanya terisi untuk order yang dibatalkan.
+// Jangan diubah jadi string kosong: untuk order yang belum dibatalkan, kunci
+// itu memang tidak ada di hasil database (docs/api-contract.md bagian 4
+// menulisnya dengan tanda tanya, bukan selalu ada), jadi di sini juga null.
 export type HasilStatusOrder = {
   status: string;
   queueNumber: number;
   queueDate: string;
   items: ItemStatusOrder[];
   total: number;
+  // Nama alasan pembatalan (stok_habis, lainnya, dst) atau null.
+  cancelReason: string | null;
+  // Catatan alasan pembatalan, atau null kalau tidak ada.
+  cancelNote: string | null;
 };
 
 // Satu menu dari GET /api/menu (fungsi get_menu).
@@ -154,6 +163,10 @@ export function petakanOrderManual(data: unknown): HasilOrderManual {
  * Output: HasilStatusOrder. Daftar items ikut dipetakan: kalau isinya bukan
  *         array, hasilnya array kosong (bukan error), supaya halaman status tetap
  *         tampil walau server mengirim data tak terduga.
+ *
+ * cancelReason dan cancelNote ikut diteruskan supaya customer bisa melihat
+ * "Dibatalkan karena: ..." di halaman statusnya (docs/order-flow.md bagian 7
+ * ayat 5). Untuk order yang belum dibatalkan keduanya null.
  */
 export function petakanHasilStatusOrder(data: unknown): HasilStatusOrder {
   const kolom = jadiObjek(data);
@@ -164,6 +177,8 @@ export function petakanHasilStatusOrder(data: unknown): HasilStatusOrder {
     queueDate: jadiTeks(kolom.queue_date),
     items: petakanItemStatus(kolom.items),
     total: jadiAngka(kolom.total),
+    cancelReason: jadiTeksAtauNull(kolom.cancelReason ?? kolom.cancel_reason),
+    cancelNote: jadiTeksAtauNull(kolom.cancelNote ?? kolom.cancel_note),
   };
 }
 
@@ -288,6 +303,24 @@ function jadiAngka(nilai: unknown): number {
     return Number.isFinite(angka) ? angka : 0;
   }
   return 0;
+}
+
+/**
+ * Mengubah nilai menjadi teks, atau null kalau tidak ada.
+ *
+ * Output: teks, atau null kalau nilainya bukan teks (termasuk null dan tidak
+ *         ada sama sekali).
+ *
+ * Kenapa butuh versi khusus ini: untuk cancelReason dan cancelNote, tidak
+ * adanya catatan itu berarti "tidak ada catatan", BUKAN "catatan kosong".
+ * Kalau diubah jadi string kosong, tampilan akan menulis "Catatan: " tanpa
+ * isi dan tidak bisa membedakannya dari catatan yang benar-benar kosong.
+ */
+function jadiTeksAtauNull(nilai: unknown): string | null {
+  if (typeof nilai === "string") {
+    return nilai;
+  }
+  return null;
 }
 
 /**

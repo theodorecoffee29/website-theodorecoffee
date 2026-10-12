@@ -15,6 +15,8 @@ import { useEffect } from "react";
 import { LayarCashier } from "./layar-cashier";
 import { useDaftarPesanan } from "@/features/cashier/use-daftar-pesanan";
 import { useFormOrderManual } from "@/features/cashier/use-form-manual";
+import { POLLING_SISA_STOK_MS } from "@/features/cashier/polling";
+import { useSisaStok } from "@/features/stok/use-sisa-stok";
 import { teksCashier } from "@/features/cashier/teks";
 
 // Props dari halaman server.
@@ -36,7 +38,12 @@ export function LayarCashierClient({
   namaAkun,
   keluar,
 }: PropsLayarCashierClient) {
-  const keadaan = useDaftarPesanan();
+  // Panel sisa stok. Dimuat lebih dulu supaya petunjuk sisa porsi di tiap item
+  // pesanan sudah ada saat daftar pesanan pertama tampil. Jeda pollingnya 5 detik
+  // (src/features/cashier/polling.ts).
+  const sisaStok = useSisaStok(POLLING_SISA_STOK_MS);
+
+  const keadaan = useDaftarPesanan(sisaStok.menus);
 
   // Form order manual. Setelah pesanan manual berhasil disimpan, daftar pesanan
   // dimuat ulang supaya pesanan baru itu langsung terlihat di bawah form.
@@ -67,6 +74,10 @@ export function LayarCashierClient({
     <LayarCashier
       keadaan={keadaan}
       formManual={formManual}
+      sisaStok={sisaStok}
+      // Daftar menu sisa stok dipakai untuk mencocokkan sisa porsi di tiap item
+      // pesanan dan di tiap menu form pesanan manual.
+      menuStok={sisaStok.menus}
       namaAkun={namaAkun}
       keluar={keluar}
     />

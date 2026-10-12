@@ -132,7 +132,41 @@ describe("petakanHasilStatusOrder", () => {
         { name: "Es Teh", qty: 1, note: null },
       ],
       total: 45000,
+      // Order ini belum dibatalkan, jadi tidak ada alasan pembatalan.
+      cancelReason: null,
+      cancelNote: null,
     });
+  });
+
+  it("meneruskan cancelReason dan cancelNote untuk order yang dibatalkan", () => {
+    // Alasan dan catatan pembatalan ikut dikembalikan supaya customer bisa
+    // menampilkan "Dibatalkan karena: ..." di halaman statusnya
+    // (docs/api-contract.md bagian 4).
+    const hasil = petakanHasilStatusOrder({
+      ...CONTOH_HASIL_STATUS_ORDER,
+      status: "dibatalkan",
+      cancelReason: "stok_habis",
+      cancelNote: "Bahan susu habis",
+    });
+
+    expect(hasil.status).toBe("dibatalkan");
+    expect(hasil.cancelReason).toBe("stok_habis");
+    expect(hasil.cancelNote).toBe("Bahan susu habis");
+  });
+
+  it("menjaga cancelNote kosong tetap kosong, bukan null", () => {
+    // Pembatalan tanpa catatan berarti catatannya tidak ada (null), bukan ada
+    // tapi isinya string kosong. Kalau dibalik, tampilan akan menulis
+    // "Catatan: " dengan isi kosong.
+    const hasil = petakanHasilStatusOrder({
+      ...CONTOH_HASIL_STATUS_ORDER,
+      status: "dibatalkan",
+      cancelReason: "pesanan_ganda",
+      cancelNote: null,
+    });
+
+    expect(hasil.cancelReason).toBe("pesanan_ganda");
+    expect(hasil.cancelNote).toBeNull();
   });
 
   it("membuang item yang tidak lengkap", () => {

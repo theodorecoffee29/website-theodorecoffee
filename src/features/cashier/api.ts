@@ -11,6 +11,8 @@
 // (camelCase). Pemetaan dari snake_case milik fungsi database terjadi di sisi
 // server (src/lib/server/petakan-hasil-fungsi.ts), bukan di sini.
 
+import type { AlasanBatal } from "@/lib/alasan-batal";
+
 // Metode bayar yang hanya ada dua (docs/api-contract.md bagian 2).
 export type MetodeBayar = "qris" | "tunai";
 
@@ -38,6 +40,10 @@ export type HasilOrderManualApi = {
 
 // Satu item dalam pesanan, sesuai keluaran GET /api/cashier/orders.
 export type ItemPesanan = {
+  // Id menu aslinya. Dipakai tampilan untuk mencocokkan item ini dengan sisa
+  // porsi menunya di panel Sisa stok. Tanpa ini, pencocokan hanya bisa lewat
+  // nama, dan dua menu bisa punya nama yang sama.
+  menuItemId: string;
   name: string;
   price: number;
   qty: number;
@@ -73,6 +79,12 @@ export type PesananCashier = {
   // tahu ini supaya tidak bingung kenapa jamnya berbeda dari jam input.
   isManualTime: boolean;
   confirmedAt: string | null;
+  // Alasan pembatalan (stok_habis, lainnya, dst) atau null kalau pesanan ini
+  // belum dibatalkan. Cashier butuh alasannya supaya bisa melihat
+  // "Dibatalkan: Stok habis" di kelompok Selesai dan dibatalkan.
+  cancelReason: string | null;
+  // Catatan alasan pembatalan, atau null kalau tidak ada.
+  cancelNote: string | null;
   items: ItemPesanan[];
   payment: Pembayaran | null;
 };
@@ -148,20 +160,35 @@ export async function konfirmasiPesanan(
 }
 
 /**
- * Membatalkan satu pesanan (oleh Cashier/Admin).
+ * Membatalkan satu pesanan (oleh Cashier/Admin) dengan alasannya.
  *
- * Input: id pesanan.
+ * Input: id pesanan, alasan pembatalan, dan catatan (boleh null kalau tidak
+ *        ada; untuk alasan "lainnya" catatan wajib diisi).
  * Output: HasilApi berisi { status: "dibatalkan" }, atau GagalApi.
  *
  * Cashier boleh membatalkan selama status masih menunggu_konfirmasi atau
  * antrean. Kalau status sudah berubah, server membalas ORDER_STATUS_CHANGED dan
  * pemanggil harus memuat ulang daftar.
+ *
+ * Alasan dan catatan WAJIB dikirim (docs/order-flow.md bagian 6 acceptance
+ * criteria 22): Cashier yang memutuskan, jadi Cashier juga yang memilih
+ * alasannya. Server akan menolak dengan VALIDATION_FAILED kalau alasan kosong
+ * atau alasan "lainnya" tanpa catatan.
  */
 export async function batalkanPesanan(
   orderId: string,
+  reason: AlasanBatal,
+  note: string | null,
 ): Promise<HasilApi<{ status: string }>> {
   return panggilApi("/api/cashier/orders/" + orderId + "/cancel", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      reason: reason,
+      // note hanya ikut kalau ada. Kalau tidak, server mengubahnya menjadi
+      // null, bukan string kosong.
+      ...(note !== null && note !== "" ? { note: note } : {}),
+    }),
   });
 }
 
