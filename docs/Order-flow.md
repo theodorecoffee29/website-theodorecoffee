@@ -57,6 +57,7 @@ Keduanya memakai alur dan antrean yang sama. Antrean Barista diurutkan berdasark
 - **Batalkan (Cashier/Admin) dan Mulai (Barista) bersamaan:** yang masuk duluan menang. Kalau Mulai menang, pembatalan ditolak dengan pesan "status pesanan sudah berubah".
 - **Klik ganda / kirim dua kali:** tidak boleh menghasilkan dua order atau dua pengurangan stok.
 - **Gagal menyimpan order:** customer melihat pesan error yang jelas dan bisa mencoba lagi. Error tercatat di log.
+- **Pembatalan setelah hari ditutup:** order dari hari yang laporannya sudah tersimpan di Riwayat tidak bisa dibatalkan, karena Riwayat tidak berubah lagi.
 - **Internet putus:** Cashier mencatat di kertas, lalu menginput belakangan dengan waktu manual (ditandai di order dan log). Waktu manual hanya boleh di **hari berjalan (WIB)** dan tidak di masa depan, karena laporan hari sebelumnya sudah terkunci di Riwayat. Input belakangan harus selesai sebelum pergantian hari.
 
 ## 6. Acceptance criteria
@@ -90,6 +91,7 @@ Alur dianggap selesai kalau semua poin ini lolos:
 22. Cashier dan Admin yang membatalkan order wajib memilih alasan (alasan `lainnya` wajib catatan 1-100 karakter), dan customer melihat "Dibatalkan karena: [alasan]" di halaman statusnya.
 23. Pembatalan oleh customer sendiri tercatat dengan alasan `diminta_customer`, dan customer melihat "Dibatalkan oleh kamu".
 24. Cashier, Barista, dan Admin bisa melihat sisa stok (hanya baca). Customer hanya melihat menu Habis atau tersedia.
+25. Pembatalan order dari hari yang laporannya sudah tersimpan di Riwayat ditolak (`VALIDATION_FAILED`).
 
 ## 7. Keputusan
 

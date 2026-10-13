@@ -54,7 +54,7 @@ Semua halaman responsif (tidak ada versi khusus per perangkat).
 14. Konfirmasi atau batalkan order sebagai cadangan Cashier
 15. Laporan hari ini (live): total penjualan, rincian per asal order dan metode bayar, menu terlaris, pemakaian bahan dan sisa stok
 16. Riwayat laporan (tersimpan otomatis tiap pergantian hari) + cetak PDF/struk
-17. Kelola akun Cashier dan Barista
+17. Kelola akun Cashier dan Barista (Admin menetapkan password awal dan bisa mereset)
 18. Log aktivitas dan log error
 
 **Otomatis oleh sistem:** menyimpan setiap order, nomor antrean yang mulai dari 1 tiap hari, pengurangan stok, penyimpanan laporan ke Riwayat, dan pencatatan semua aktivitas dan error.
@@ -84,7 +84,7 @@ Dua cara: **scan QRIS yang terpasang di booth**, atau **bayar langsung** (offlin
 
 - Laporan hari ini tampil live: total penjualan, rincian, menu terlaris, pemakaian bahan dan sisa stok
 - Tiap baris order punya dua label: **asal order** (online/Cashier) dan **metode bayar** (QRIS/langsung)
-- Laporan masuk otomatis ke **Riwayat** saat pergantian hari (WIB), lalu tidak berubah lagi
+- Laporan masuk otomatis ke **Riwayat** saat pergantian hari (WIB), lalu tidak berubah lagi. Cadangan: saat Riwayat dibuka, hari lalu yang belum tersimpan ikut disimpan.
 - Riwayat bisa dibuka lagi dan dicetak sebagai PDF/struk
 - Order yang dibatalkan, termasuk yang dibatalkan setelah konfirmasi, tidak dihitung dalam total penjualan dan rincian metode bayar
 - Belum di V1: order per jam, daftar order batal

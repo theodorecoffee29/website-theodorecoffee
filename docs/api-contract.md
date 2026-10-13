@@ -67,8 +67,8 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 - **Admin, menu, resep, dan stok:** detail di bagian 4b
 - **Admin, akun:** `create_account`, `update_account`, `deactivate_account`, `reset_password`
 - **Admin, log:** `list_activity_logs`, `list_error_logs`
-- **Cashier dan Admin, laporan:** `get_today_report`, `list_reports`, `get_report`
-- **Sistem:** `save_daily_report` (otomatis tiap pergantian hari)
+- **Cashier dan Admin, laporan:** detail di bagian 4c
+- **Sistem:** `save_daily_report` (jadwal pg_cron), detail di bagian 4c
 
 ## 4. Detail fungsi order
 
@@ -155,6 +155,49 @@ Semua fungsi yang mengubah stok mengunci baris bahan (`for update`) dan mengisi 
 - `GET /api/admin/menu`: semua menu termasuk yang nonaktif, beserta baris resepnya
 - `GET /api/admin/ingredients`: nama, satuan, dan stok (stok minus ditandai)
 - `GET /api/admin/ingredients/[id]/movements`: riwayat pergerakan stok, terbaru dulu, maksimal 100
+
+## 4c. Detail fungsi laporan dan Riwayat
+
+Hari memakai zona waktu WIB, dan sebuah order masuk ke hari menurut `queue_date`-nya. Server mengirim `p_actor_id` untuk fungsi staf.
+
+| Fungsi | Siapa | Tugas |
+|---|---|---|
+| `build_daily_report(date)` | Internal | Membangun isi laporan satu hari (hanya membaca) |
+| `save_daily_report(date)` | Sistem (pg_cron) | Menyimpan laporan tanggal itu ke Riwayat. Idempotent: kalau sudah ada, tidak berubah. Hanya tanggal sebelum hari ini (WIB). Log `report.saved` |
+| `save_missing_reports` | Cashier, Admin | Cadangan: menyimpan semua hari lalu yang belum tersimpan, dari tanggal order paling awal sampai kemarin. Dipanggil saat Riwayat dibuka |
+| `get_today_report` | Cashier, Admin | Laporan hari ini (live, belum disimpan), memuat `live: true` |
+| `list_reports` | Cashier, Admin | Daftar Riwayat: id, tanggal, waktu disimpan, dan ringkasan total. Terbaru dulu |
+| `get_report` | Cashier, Admin | Isi satu laporan tersimpan (snapshot) |
+
+**Isi laporan (camelCase):**
+```json
+{
+  "date": "2026-10-11",
+  "totals": { "orderCount": 0, "sales": 0, "cancelledCount": 0, "unfinishedCount": 0 },
+  "bySource": { "online": { "count": 0, "amount": 0 }, "cashier": { "count": 0, "amount": 0 } },
+  "byPaymentMethod": { "qris": { "count": 0, "amount": 0 }, "tunai": { "count": 0, "amount": 0 } },
+  "topMenu": [{ "name": "", "qty": 0, "amount": 0 }],
+  "ingredientUsage": [{ "name": "", "unit": "g", "used": 0, "stockAtEnd": 0 }],
+  "orders": [{ "orderId": "", "queueNumber": 0, "customerName": "", "source": "online",
+               "paymentMethod": "qris", "status": "selesai",
+               "items": [{ "name": "", "qty": 0, "note": "" }], "total": 0,
+               "confirmedAt": "", "isManualTime": false, "cancelReason": null }]
+}
+```
+
+**Aturan:**
+- Order **terhitung** = berstatus `antrean`, `dikerjakan`, atau `selesai`, dan pembayarannya tidak dibatalkan (`voided_at` kosong). Hanya order terhitung yang masuk `orderCount`, `sales`, `bySource`, `byPaymentMethod`, dan `topMenu`.
+- `cancelledCount` = order dibatalkan. `unfinishedCount` = order yang masih `menunggu_konfirmasi` (tidak terhitung).
+- `topMenu`: berdasarkan jumlah porsi, 10 teratas. `ingredientUsage.used` = pengurangan karena pesanan dikurangi pengembalian karena pembatalan pada hari itu. `stockAtEnd` = stok setelah pergerakan terakhir sampai akhir hari itu.
+- `orders` memuat semua order hari itu, termasuk yang dibatalkan (dengan `cancelReason`), urut menurut nomor antrean. Laporan tidak memuat data yang bukan haknya Cashier (tetap sama dengan haknya Admin untuk laporan).
+- **Riwayat tidak berubah setelah tersimpan.** Karena itu `cancel_order` menolak pembatalan order yang laporan harinya sudah tersimpan (`VALIDATION_FAILED`, detail "laporan hari itu sudah tersimpan").
+- **Jadwal:** pg_cron menyimpan laporan kemarin tiap hari pukul 00.05 WIB (17.05 UTC). Cadangannya `save_missing_reports`.
+
+**Route server (Fase 6.2):**
+- `GET /api/reports/today`
+- `GET /api/reports` (memanggil `save_missing_reports` dulu, lalu `list_reports`)
+- `GET /api/reports/[id]`
+- `POST /api/reports/[id]/printed` (mencatat log `report.printed`)
 
 ## 5. Polling (pembaruan layar)
 

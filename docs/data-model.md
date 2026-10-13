@@ -122,7 +122,7 @@ Dibuat saat konfirmasi. Order yang dibatalkan sebelum konfirmasi tidak punya bar
 | data | jsonb: total penjualan, rincian per asal order dan metode bayar, menu terlaris, pemakaian bahan, sisa stok, dan baris-baris order hari itu |
 | generated_at | |
 
-Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat.
+Dibuat otomatis saat pergantian hari. **Tidak boleh diubah** setelah dibuat. Disimpan oleh pg_cron tiap hari pukul 00.05 WIB untuk hari kemarin, dengan cadangan `save_missing_reports` saat Riwayat dibuka. Struktur `data` ada di `api-contract.md` bagian 4c.
 
 ### activity_logs
 | Field | Keterangan |
