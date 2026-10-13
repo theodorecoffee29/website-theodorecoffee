@@ -14,6 +14,10 @@ import {
   POLLING_ANTREAN_MS,
   POLLING_SISA_STOK_MS as POLLING_SISA_STOK_BARISTA_MS,
 } from "@/features/barista/polling";
+import {
+  POLLING_MENU_MS,
+  POLLING_STATUS_MS,
+} from "@/features/customer/polling";
 
 describe("konstanta polling Cashier", () => {
   it("daftar pesanan di-poll setiap 2 detik", () => {
@@ -32,6 +36,24 @@ describe("konstanta polling Barista", () => {
 
   it("sisa stok di-poll setiap 10 detik", () => {
     expect(POLLING_SISA_STOK_BARISTA_MS).toBe(10000);
+  });
+});
+
+describe("konstanta polling customer", () => {
+  it("status pesanan di-poll setiap 5 detik", () => {
+    expect(POLLING_STATUS_MS).toBe(5000);
+  });
+
+  it("daftar menu dimuat ulang setiap 30 detik", () => {
+    // docs/api-contract.md bagian 5: "Menu di halaman pesan customer | get_menu
+    // | 30 detik, hanya saat tab terlihat".
+    expect(POLLING_MENU_MS).toBe(30000);
+  });
+
+  it("daftar menu dimuat lebih lambat daripada status pesanan", () => {
+    // Menu jarang berubah, jadi tidak perlu sering diambil. Halaman status
+    // harus cepat karena customer sedang menunggu.
+    expect(POLLING_MENU_MS).toBeGreaterThan(POLLING_STATUS_MS);
   });
 });
 

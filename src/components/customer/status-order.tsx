@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import type { StatusOrderResponse } from "@/features/customer/api";
+import type { TeksPembatalan } from "@/features/customer/teks-pembatalan";
 import { teksCustomer } from "@/features/customer/teks";
 
 // Props untuk komponen halaman status.
@@ -15,6 +16,9 @@ type PropsStatusOrder = {
   // mengirimkannya (dan tidak perlu: customer itu orangnya sendiri).
   customerName: string;
   teksStatus: string;
+  // Alasan pembatalan yang sudah jadi kalimat, atau null kalau ordernya belum
+  // dibatalkan.
+  pembatalan: TeksPembatalan | null;
   bolehBatalkan: boolean;
   dialogBatalTerbuka: boolean;
   sedangMembatalkan: boolean;
@@ -88,6 +92,20 @@ export function StatusOrder(props: PropsStatusOrder) {
         </p>
         <p className="text-sm font-medium">{props.teksStatus}</p>
       </div>
+
+      {/* Alasan pembatalan (docs/order-flow.md bagian 6 ayat 22 dan 23).
+          Customer tidak pernah memilih alasannya sendiri; alasannya diisi
+          server. Catatan dari staf ditampilkan di bawahnya kalau ada. */}
+      {props.pembatalan ? (
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2">
+          <p className="text-sm font-medium">{props.pembatalan.alasan}</p>
+          {props.pembatalan.catatan ? (
+            <p className="mt-1 text-sm text-gray-700">
+              {props.pembatalan.catatan}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Petunjuk bayar, hanya saat menunggu konfirmasi. */}
       {order.status === "menunggu_konfirmasi" ? (

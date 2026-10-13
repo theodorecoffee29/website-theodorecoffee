@@ -18,12 +18,15 @@ import {
   type StatusOrderResponse,
 } from "./api";
 import { buangOrderAktif, cariNamaCustomer } from "./penyimpan-order";
+import { POLLING_STATUS_MS } from "./polling";
 import { customerBolehBatalkan, statusSudahFinal, teksStatus } from "./status";
+import { teksPembatalan, type TeksPembatalan } from "./teks-pembatalan";
 import { teksCustomer } from "./teks";
 
 // Berapa milidetik satu jeda polling. docs/api-contract.md bagian 5 menetapkan
-// halaman status customer memanggil setiap 5 detik.
-export const INTERVAL_POLLING_MS = 5000;
+// halaman status customer memanggil setiap 5 detik. Angkanya ada di
+// src/features/customer/polling.ts supaya semua jeda customer di satu tempat.
+export const INTERVAL_POLLING_MS = POLLING_STATUS_MS;
 
 // Berapa kali polling gagal berturut-turut sebelum satu log error dikirim.
 // supaya tidak membanjiri log error kalau internet memang sedang putus.
@@ -53,6 +56,9 @@ export type KeadaanStatusOrder = {
   tidakDitemukan: boolean;
   // Teks status untuk ditampilkan.
   teksStatus: string;
+  // Alasan pembatalan untuk ditampilkan, atau null kalau ordernya belum
+  // dibatalkan (hanya diisi saat status "dibatalkan").
+  pembatalan: TeksPembatalan | null;
   // Pesan error atau informasi tambahan, atau null.
   pesan: string | null;
   // Aksi yang dipanggil komponen tampilan.
@@ -292,6 +298,11 @@ export function useStatusOrder(orderId: string): KeadaanStatusOrder {
     gagalMuat: gagalMuat,
     tidakDitemukan: tidakDitemukan,
     teksStatus: teksStatus(statusSekarang),
+    // Alasan pembatalan hanya bermakna kalau statusnya sudah "dibatalkan".
+    pembatalan:
+      order !== null && statusSekarang === "dibatalkan"
+        ? teksPembatalan(order.cancelReason, order.cancelNote)
+        : null,
     pesan: pesan,
     bukaDialogBatal: bukaDialogBatal,
     tutupDialogBatal: tutupDialogBatal,

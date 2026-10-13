@@ -34,6 +34,7 @@ export default function HalamanStatusOrder({
         order={keadaan.order}
         customerName={keadaan.customerName}
         teksStatus={keadaan.teksStatus}
+        pembatalan={keadaan.pembatalan}
         bolehBatalkan={keadaan.bolehBatalkan}
         dialogBatalTerbuka={keadaan.dialogBatalTerbuka}
         sedangMembatalkan={keadaan.sedangMembatalkan}

@@ -38,6 +38,20 @@ export const teksCustomer = {
     tombolKirimSedang: "Mengirim…",
     // Status menu.
     labelHabis: "Habis",
+    // Menu yang sudah dipilih tapi kemudian jadi Habis atau dinonaktifkan.
+    // Isian pengguna TIDAK dihapus diam-diam; baris ini ditandai supaya
+    // pengguna menghapus sendiri barisnya atau mengosongkan jumlahnya.
+    labelTidakTersedia: "Tidak tersedia",
+    // Baris menu yang sudah tidak ada lagi di daftar menu (dinonaktifkan).
+    labelMenuTidakAda: "Menu ini sudah tidak tersedia",
+    // Peringatan kalau masih ada baris terpilih yang menunya tidak tersedia.
+    pesanMenuTidakTersedia:
+      "Ada menu yang sudah tidak tersedia. Hapus barisnya atau kosongkan jumlahnya sebelum mengirim.",
+    // Menu gagal dimuat ulang: daftar yang sudah tampil tetap dipakai, pesan
+    // ini hanya pemberitahuan kecil dan percobaan berikutnya otomatis lagi.
+    pesanGagalMuatUlang: "Daftar menu gagal dimuat. Mencoba lagi…",
+    // Server menolak karena ada menu yang Habis atau nonaktif.
+    pesanMenuHabis: "Ada menu yang sudah tidak tersedia, silakan periksa pesananmu",
     labelJumlahBenar: "Jumlah tiap menu harus antara 0 sampai 99.",
     labelCatatanMaks: "Catatan maksimal 100 karakter.",
     pesanNamaWajib: "Nama wajib diisi.",
@@ -64,6 +78,18 @@ export const teksCustomer = {
     statusSedangDibuat: "Sedang dibuat",
     statusSelesai: "Pesanan selesai",
     statusDibatalkan: "Dibatalkan",
+    // Alasan pembatalan yang dilihat customer (docs/order-flow.md bagian 6
+    // ayat 22 dan 23). Customer tidak pernah memilih sendiri; alasannya diisi
+    // server. "lainnya" memakai kalimat paling umum karena isinya bebas dan
+    // dijelaskan oleh catatan.
+    alasanBatal: {
+      stokHabis: "Dibatalkan karena stok habis",
+      pembayaranTidakDiterima: "Dibatalkan karena pembayaran belum diterima",
+      dimintaCustomer: "Dibatalkan oleh kamu",
+      pesananGanda: "Dibatalkan karena pesanan ganda",
+      salahInput: "Dibatalkan karena salah input",
+      lainnya: "Dibatalkan",
+    },
     // Petunjuk saat masih menunggu konfirmasi.
     petunjukBayar: "Silakan bayar di booth",
     // Tombol.

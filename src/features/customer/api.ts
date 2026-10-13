@@ -40,6 +40,12 @@ export type StatusOrderResponse = {
   queueDate: string;
   items: { name: string; qty: number; note: string | null }[];
   total: number;
+  // Alasan pembatalan. Hanya ada (tidak null) untuk order yang dibatalkan
+  // (docs/api-contract.md bagian 4). Order lama belum punya alasan, jadi
+  // boleh null.
+  cancelReason?: string | null;
+  // Catatan alasan pembatalan dari staf. Boleh null.
+  cancelNote?: string | null;
 };
 
 /**

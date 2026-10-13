@@ -5,8 +5,8 @@
 // "Tampilan"). Semua logika ada di src/features/customer/.
 
 import Link from "next/link";
-import type { MenuItem } from "@/features/customer/api";
-import type { BarisPesanan } from "@/features/customer/validasi-form";
+import type { BarisPesananTampil } from "@/features/customer/daftar-menu";
+import { barisDipilih } from "@/features/customer/daftar-menu";
 import type { OrderAktif } from "@/features/customer/use-order-aktif";
 import { teksCustomer } from "@/features/customer/teks";
 
@@ -61,14 +61,14 @@ export function DaftarOrderAktif({ orderAktif }: { orderAktif: OrderAktif[] }) {
 
 // Props untuk komponen form pesan. Semua berasal dari hook useFormPesan.
 type PropsFormPesan = {
-  menu: MenuItem[];
-  barisPesanan: BarisPesanan[];
+  barisPesanan: BarisPesananTampil[];
   customerName: string;
   total: number;
   tombolKirimAktif: boolean;
   sedangMengirim: boolean;
   memuatMenu: boolean;
   pesanError: string | null;
+  pesanMenu: string | null;
   pesanNama: string | null;
   pesanItem: string | null;
   ubahNama: (nilai: string) => void;
@@ -109,6 +109,14 @@ export function FormPesan(props: PropsFormPesan) {
         <p className="text-sm">{teksCustomer.status.memuat}</p>
       ) : null}
 
+      {/* Pesan kecil soal daftar menu (gagal muat ulang, atau ada menu terpilih
+          yang tidak tersedia). Isian pengguna tidak dihapus karena ini. */}
+      {props.pesanMenu ? (
+        <p role="status" className="text-sm text-amber-700">
+          {props.pesanMenu}
+        </p>
+      ) : null}
+
       {/* Isian nama customer. */}
       <div>
         <label htmlFor="customerName" className="block text-sm font-medium">
@@ -135,29 +143,38 @@ export function FormPesan(props: PropsFormPesan) {
           {teksCustomer.formPesan.labelMenu}
         </legend>
 
-        {props.menu.map((satuMenu, index) => {
-          // Cari baris pesanan menu ini supaya isiannya terhubung.
-          const baris = props.barisPesanan.find(
-            (satuBaris) => satuBaris.menuItemId === satuMenu.id,
-          );
+        {props.barisPesanan.map((baris, index) => {
+          // Menu ini dipilih pengguna? (jumlahnya lebih dari 0)
+          const dipilih = barisDipilih(baris);
 
-          // Menu yang habis tidak bisa dipilih, jadi isiannya dimatikan.
-          const bisaDipilih = satuMenu.available;
+          // Menu masih bisa dipesan? Kalau tidak, baris yang SUDAH dipilih
+          // tetap boleh diubah isiannya (pengguna perlu bisa mengosongkan
+          // jumlahnya sendiri), tapi baris yang belum dipilih tetap dikunci
+          // supaya tidak ada yang memilih menu Habis.
+          const bisaDiisi = baris.tersedia || dipilih;
 
           return (
             <div
-              key={satuMenu.id}
+              key={baris.menuItemId}
               className="rounded border border-gray-200 px-3 py-2"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium">{satuMenu.name}</span>
-                <span className="text-sm">{formatRupiah(satuMenu.price)}</span>
+                <span className="text-sm font-medium">
+                  {baris.nama ?? teksCustomer.formPesan.labelMenuTidakAda}
+                </span>
+                {baris.harga !== null ? (
+                  <span className="text-sm">{formatRupiah(baris.harga)}</span>
+                ) : null}
               </div>
 
-              {/* Menu habis: tampilkan label "Habis" dan jangan izinkan diisi. */}
-              {!bisaDipilih ? (
+              {/* Menu yang tidak tersedia. Kalau sudah dipilih, isiannya
+                  sengaja TIDAK dihapus: pengguna yang memutuskan menghapus
+                  baris atau mengosongkan jumlahnya. */}
+              {!baris.tersedia ? (
                 <p className="mt-1 text-sm text-gray-500">
-                  {teksCustomer.formPesan.labelHabis}
+                  {dipilih
+                    ? teksCustomer.formPesan.labelTidakTersedia
+                    : teksCustomer.formPesan.labelHabis}
                 </p>
               ) : null}
 
@@ -176,10 +193,10 @@ export function FormPesan(props: PropsFormPesan) {
                     min={0}
                     max={99}
                     step={1}
-                    disabled={!bisaDipilih}
-                    value={baris?.qty ?? ""}
+                    disabled={!bisaDiisi}
+                    value={baris.qty}
                     onChange={(peristiwa) =>
-                      props.ubahQty(satuMenu.id, peristiwa.target.value)
+                      props.ubahQty(baris.menuItemId, peristiwa.target.value)
                     }
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                   />
@@ -196,11 +213,11 @@ export function FormPesan(props: PropsFormPesan) {
                     id={"note-" + index}
                     type="text"
                     maxLength={100}
-                    disabled={!bisaDipilih}
+                    disabled={!bisaDiisi}
                     placeholder={teksCustomer.formPesan.placeholderCatatan}
-                    value={baris?.note ?? ""}
+                    value={baris.note}
                     onChange={(peristiwa) =>
-                      props.ubahCatatan(satuMenu.id, peristiwa.target.value)
+                      props.ubahCatatan(baris.menuItemId, peristiwa.target.value)
                     }
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                   />
