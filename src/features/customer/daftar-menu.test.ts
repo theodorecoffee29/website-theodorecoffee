@@ -75,7 +75,10 @@ describe("gabungan daftar menu baru dengan isian pengguna", () => {
   });
 
   it("menu yang hilang dari daftar (nonaktif) tetap jadi baris di paling akhir", () => {
-    const isiBaris: IsiBaris = { m1: { qty: "1", note: "" }, m9: { qty: "4", note: "panas" } };
+    const isiBaris: IsiBaris = {
+      m1: { qty: "1", note: "" },
+      m9: { qty: "4", note: "panas" },
+    };
 
     const baris = susunBarisPesanan(DUA_MENU, isiBaris);
 
@@ -123,7 +126,9 @@ describe("penanda tidak tersedia dan keadaan tombol kirim", () => {
 
     const baris = susunBarisPesanan(menuBaru, { m2: { qty: "", note: "es" } });
 
-    expect(baris.find((satu) => satu.menuItemId === "m2")?.tersedia).toBe(false);
+    expect(baris.find((satu) => satu.menuItemId === "m2")?.tersedia).toBe(
+      false,
+    );
     expect(barisTidakTersediaTerpilih(baris)).toHaveLength(0);
   });
 
@@ -166,8 +171,12 @@ describe("sidik jari pesanan untuk idempotencyKey", () => {
   });
 
   it("qty yang berbeda menghasilkan sidik jari berbeda", () => {
-    const barisSatu = susunBarisPesanan(DUA_MENU, { m1: { qty: "1", note: "" } });
-    const barisDua = susunBarisPesanan(DUA_MENU, { m1: { qty: "2", note: "" } });
+    const barisSatu = susunBarisPesanan(DUA_MENU, {
+      m1: { qty: "1", note: "" },
+    });
+    const barisDua = susunBarisPesanan(DUA_MENU, {
+      m1: { qty: "2", note: "" },
+    });
 
     expect(sidikJariPesanan("Budi", barisSatu)).not.toBe(
       sidikJariPesanan("Budi", barisDua),

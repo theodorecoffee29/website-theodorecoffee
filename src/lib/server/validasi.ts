@@ -32,6 +32,16 @@ const itemOrderSchema = z.object({
   note: z.string().max(100, "catatan maksimal 100 karakter.").optional(),
 });
 
+// Skema untuk id laporan.
+//
+// Id laporan dicek DI SINI, sebelum database disentuh. Alasannya: id yang bukan
+// uuid tidak mungkin ada di database, jadi jawabannya pasti "laporan tidak
+// ditemukan". Menolaknya lebih awal juga mencegah penulisan error_logs untuk
+// permintaan yang memang tidak salah (docs/api-contract.md bagian 6).
+export const laporanIdSchema = z.object({
+  id: z.string().uuid("id laporan harus berupa uuid yang valid."),
+});
+
 // Skema untuk POST /api/orders (buat order online oleh customer).
 export const buatOrderSchema = z.object({
   customerName: z

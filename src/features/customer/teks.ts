@@ -51,7 +51,8 @@ export const teksCustomer = {
     // ini hanya pemberitahuan kecil dan percobaan berikutnya otomatis lagi.
     pesanGagalMuatUlang: "Daftar menu gagal dimuat. Mencoba lagi…",
     // Server menolak karena ada menu yang Habis atau nonaktif.
-    pesanMenuHabis: "Ada menu yang sudah tidak tersedia, silakan periksa pesananmu",
+    pesanMenuHabis:
+      "Ada menu yang sudah tidak tersedia, silakan periksa pesananmu",
     labelJumlahBenar: "Jumlah tiap menu harus antara 0 sampai 99.",
     labelCatatanMaks: "Catatan maksimal 100 karakter.",
     pesanNamaWajib: "Nama wajib diisi.",

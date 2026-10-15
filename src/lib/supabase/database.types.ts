@@ -100,16 +100,22 @@ export type Database = {
         Row: {
           data: Json;
           generated_at: string;
+          // Kolom id ditambahkan lewat migrasi 20261013025950_daily_reports.sql,
+          // bukan di migrasi tabel. Dipakai sebagai entity_id di log
+          // report.saved dan report.printed.
+          id: string;
           report_date: string;
         };
         Insert: {
           data: Json;
           generated_at?: string;
+          id?: string;
           report_date: string;
         };
         Update: {
           data?: Json;
           generated_at?: string;
+          id?: string;
           report_date?: string;
         };
         Relationships: [];
@@ -613,6 +619,21 @@ export type Database = {
       };
       get_menu: { Args: never; Returns: Json };
       get_order_status: { Args: { p_order_id: string }; Returns: Json };
+      // Fungsi laporan harian dan Riwayat (dari migrasi daily_reports).
+      // Hanya Cashier dan Admin; perannya diperiksa di dalam fungsi lewat
+      // require_staff.
+      build_daily_report: { Args: { p_date: string }; Returns: Json };
+      save_daily_report: {
+        Args: { p_date: string; p_source?: string };
+        Returns: Json;
+      };
+      save_missing_reports: { Args: { p_actor_id: string }; Returns: Json };
+      get_today_report: { Args: { p_actor_id: string }; Returns: Json };
+      list_reports: { Args: { p_actor_id: string }; Returns: Json };
+      get_report: {
+        Args: { p_actor_id: string; p_report_id: string };
+        Returns: Json;
+      };
       // Ringkasan sisa stok untuk cashier, barista, dan admin (hanya baca).
       // Perannya diperiksa di dalam fungsi lewat require_staff. Lihat migrasi
       // 20261010073525_cancel_reason_stock_overview.sql.

@@ -217,7 +217,10 @@ export function FormPesan(props: PropsFormPesan) {
                     placeholder={teksCustomer.formPesan.placeholderCatatan}
                     value={baris.note}
                     onChange={(peristiwa) =>
-                      props.ubahCatatan(baris.menuItemId, peristiwa.target.value)
+                      props.ubahCatatan(
+                        baris.menuItemId,
+                        peristiwa.target.value,
+                      )
                     }
                     className="mt-1 w-full rounded border border-gray-300 px-2 py-1"
                   />

@@ -139,7 +139,10 @@ export function barisTidakTersediaTerpilih(
  * Urutan item sengaja disamakan (diurutkan menurut menuItemId) supaya urutan
  * baris di layar tidak ikut_memengaruhi kunci.
  */
-export function sidikJariPesanan(nama: string, baris: BarisPesananTampil[]): string {
+export function sidikJariPesanan(
+  nama: string,
+  baris: BarisPesananTampil[],
+): string {
   const itemDipakai = baris
     .filter((satuBaris) => barisDipilih(satuBaris))
     .map((satuBaris) => ({

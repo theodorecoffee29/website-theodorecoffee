@@ -18,7 +18,11 @@ import { logError } from "@/lib/log";
 
 // Kode status HTTP untuk setiap tipe error. Ini penting supaya kode di browser
 // (fetch) tahu membedakan jenis kegagalan tanpa membaca isi json.
-const STATUS_HTTP: Record<ErrorType, number> = {
+//
+// Diekspor karena endpoint laporan memakai pemetaan yang sama persis (lihat
+// src/lib/server/balas-laporan.ts). Menuliskannya dua kali berisiko membuat
+// keduanya berbeda nanti.
+export const STATUS_HTTP: Record<ErrorType, number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
   VALIDATION_FAILED: 400,
@@ -125,6 +129,31 @@ export function balasDariErrorDatabase(
   error: unknown,
   konteks: string,
 ): NextResponse {
+  return balasErrorDatabase(error, konteks, balasGagal);
+}
+
+/**
+ * Mengubah error dari database menjadi respons, memakai pembuat respons yang
+ * diberi pemanggil.
+ *
+ * Input:
+ *   - error: objek error dari supabase-js (atau error tak terduga).
+ *   - konteks: keterangan singkat tentang apa yang sedang gagal, dipakai untuk
+ *     log. Contoh: "confirm_order".
+ *   - buatRespons: fungsi yang mengubah AppError menjadi NextResponse. Endpoint
+ *     laporan/example punya headernya sendiri (no-store), jadi mereka memakai
+ *     pembuat respons yang sama tapi headernya berbeda.
+ * Output: objek NextResponse berisi { ok: false, error }.
+ *
+ * Kenapa ada parameternya: seluruh penjelasan tentang pemetaan error database
+ * ada di sini SEKALI. Kalau endpoint laporan menulis ulang blok yang sama, dua
+ * tempat bisa lama-lama berbeda (mis. satu lupa memakai kode ERR-xxxx).
+ */
+export function balasErrorDatabase(
+  error: unknown,
+  konteks: string,
+  buatRespons: (appError: AppError) => NextResponse,
+): NextResponse {
   const appError = fromDatabaseError(error);
 
   if (appError.type === "INTERNAL_ERROR") {
@@ -149,8 +178,8 @@ export function balasDariErrorDatabase(
       },
     });
 
-    return balasGagal({ ...appError, code: kode });
+    return buatRespons({ ...appError, code: kode });
   }
 
-  return balasGagal(appError);
+  return buatRespons(appError);
 }

@@ -123,8 +123,7 @@ export function useFormPesan(): KeadaanFormPesan {
    * gagal hanya menampilkan pesan kecil, dan percobaan berikutnya (30 detik
    * kemudian) mengulangi sendiri.
    */
-  const muatMenu = useCallback(
-    async (muatAwal: boolean): Promise<void> => {
+  const muatMenu = useCallback(async (muatAwal: boolean): Promise<void> => {
     if (sedangMemuatMenuRef.current) {
       return;
     }
@@ -155,9 +154,7 @@ export function useFormPesan(): KeadaanFormPesan {
     // susunBarisPesanan (dipanggil di bawah lewat useMemo).
     setDaftarMenu(hasil.data);
     setPesanMenu(null);
-    },
-    [],
-  );
+  }, []);
 
   // Pemuatan menu: sekali di awal, lalu setiap 30 detik selama tab terlihat.
   // Efek ini hanya hidup selama form pesan tampil, karena hook ini hanya
