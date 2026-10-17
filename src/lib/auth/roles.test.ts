@@ -11,6 +11,8 @@
 //   - Halaman Laporan mengikuti halaman induknya: /cashier/laporan untuk Cashier
 //     dan Admin, /admin/laporan hanya Admin. Barista tidak boleh melihat laporan
 //     karena laporan berisi omzet.
+//   - /admin/log hanya Admin, karena isinya memuat detail teknis kegagalan dan
+//     jejak siapa yang melakukan apa.
 
 import { describe, expect, it } from "vitest";
 import { HALAMAN_PERAN, pathUntukRole, peranBolehBukaPath } from "./roles";
@@ -27,7 +29,13 @@ const hakAkses: Record<
 > = {
   cashier: {
     boleh: ["/cashier", "/cashier/laporan", "/cashier/laporan/[id]"],
-    tidakBoleh: ["/barista", "/admin", "/admin/laporan", "/admin/laporan/[id]"],
+    tidakBoleh: [
+      "/barista",
+      "/admin",
+      "/admin/laporan",
+      "/admin/laporan/[id]",
+      "/admin/log",
+    ],
   },
   barista: {
     boleh: ["/barista"],
@@ -38,6 +46,7 @@ const hakAkses: Record<
       "/cashier/laporan/[id]",
       "/admin/laporan",
       "/admin/laporan/[id]",
+      "/admin/log",
     ],
   },
   admin: {
@@ -48,6 +57,7 @@ const hakAkses: Record<
       "/cashier/laporan/[id]",
       "/admin/laporan",
       "/admin/laporan/[id]",
+      "/admin/log",
     ],
     tidakBoleh: ["/barista"],
   },
@@ -91,8 +101,9 @@ describe("peranBolehBukaPath", () => {
       }
     }
 
-    // 3 peran x 7 halaman (3 halaman peran + 4 halaman laporan) = 21 kombinasi.
-    expect(jumlahDiperiksa).toBe(21);
+    // 3 peran x 8 halaman (3 halaman peran + 4 halaman laporan + 1 halaman log)
+    // = 24 kombinasi.
+    expect(jumlahDiperiksa).toBe(24);
   });
 
   it("hanya Admin yang boleh membuka /cashier sebagai cadangan", () => {
@@ -130,6 +141,14 @@ describe("peranBolehBukaPath", () => {
     expect(peranBolehBukaPath("admin", "/admin/laporan/[id]")).toBe(true);
     expect(peranBolehBukaPath("cashier", "/admin/laporan/[id]")).toBe(false);
     expect(peranBolehBukaPath("barista", "/admin/laporan/[id]")).toBe(false);
+  });
+
+  it("hanya Admin yang boleh membuka halaman log", () => {
+    // Isi log memuat detail teknis kegagalan dan jejak siapa melakukan apa, jadi
+    // hanya Admin (docs/pemissions.md bagian 2).
+    expect(peranBolehBukaPath("admin", "/admin/log")).toBe(true);
+    expect(peranBolehBukaPath("cashier", "/admin/log")).toBe(false);
+    expect(peranBolehBukaPath("barista", "/admin/log")).toBe(false);
   });
 
   it("hanya Barista yang boleh membuka /barista", () => {

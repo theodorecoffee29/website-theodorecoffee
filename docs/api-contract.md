@@ -66,7 +66,7 @@ Pembatasan jumlah permintaan (rate limit) berlaku untuk fungsi yang bisa dipangg
 **Ringkas saja (detail ditulis saat fasenya):**
 - **Admin, menu, resep, dan stok:** detail di bagian 4b
 - **Admin, akun:** `create_account`, `update_account`, `deactivate_account`, `reset_password`
-- **Admin, log:** `list_activity_logs`, `list_error_logs`
+- **Admin, log:** detail di bagian 4d (route baca, tanpa fungsi database)
 - **Cashier dan Admin, laporan:** detail di bagian 4c
 - **Sistem:** `save_daily_report` (jadwal pg_cron), detail di bagian 4c
 
@@ -198,6 +198,26 @@ Hari memakai zona waktu WIB, dan sebuah order masuk ke hari menurut `queue_date`
 - `GET /api/reports` (memanggil `save_missing_reports` dulu, lalu `list_reports`)
 - `GET /api/reports/[id]`
 - `POST /api/reports/[id]/printed` (mencatat log `report.printed`)
+
+## 4d. Detail bacaan log (Admin)
+
+Hanya **admin**. Dibaca lewat route server dari tabel `activity_logs` dan `error_logs` (tanpa fungsi database baru). Hanya membaca: tidak ada route untuk menulis, mengubah, atau menghapus log. Membuka halaman log tidak dicatat ke log. Waktu memakai zona WIB.
+
+| Route | Tugas |
+|---|---|
+| `GET /api/admin/logs/activity` | Daftar log aktivitas, terbaru dulu |
+| `GET /api/admin/logs/errors` | Daftar log error, terbaru dulu |
+
+**Filter (semua opsional):**
+- Aktivitas: `from` dan `to` (tanggal WIB), `action` (salah satu nama aksi di `logging.md` bagian 2), `actorRole`, `entityType`, `orderId` (uuid; menampilkan seluruh jejak satu order, dari `order.created` sampai `order.finished`, urut dari yang paling lama)
+- Error: `from` dan `to`, `severity`, `source`, `code` (format `ERR-XXXX`, tidak membedakan huruf besar/kecil), `orderId`
+
+**Halaman:** 50 baris per halaman, memakai penanda lanjutan (`cursor`) berdasarkan waktu dan id, bukan nomor halaman. Respons: `{ items, nextCursor }`.
+
+**Isi baris aktivitas:** `at`, `action`, `actorRole`, `actorName` (dari `profiles`, kosong untuk customer dan sistem), `entityType`, `entityId`, `before`, `after`, `meta`.
+**Isi baris error:** `at`, `code`, `severity`, `source`, `message`, `context`, `userId`, `orderId`.
+
+Nilai `before`, `after`, `meta`, dan `context` melewati `redactSecrets` sekali lagi sebelum dikirim (jaga-jaga). Error: `UNAUTHENTICATED`, `FORBIDDEN` (dan `access.denied` dicatat), `VALIDATION_FAILED` untuk filter yang tidak valid.
 
 ## 5. Polling (pembaruan layar)
 

@@ -5,6 +5,7 @@
 //   - Menu dan resep: /admin/menu (sudah ada).
 //   - Stok: /admin/stok (sudah ada).
 //   - Laporan dan Riwayat: /admin/laporan (sudah ada).
+//   - Log aktivitas dan log error: /admin/log (sudah ada).
 //
 // Yang tetap dari tugas sebelumnya (tugas 2.7):
 //   1. Penjagaan akses di sisi server lewat wajibPeran("/admin"). Wajib, karena
@@ -26,6 +27,7 @@ import { wajibPeran } from "@/lib/auth/session";
 import { teksMenuAdmin } from "@/features/admin/menu/teks";
 import { teksStokAdmin } from "@/features/admin/stok/teks";
 import { teksLaporan } from "@/features/laporan/teks";
+import { teksLog } from "@/features/log/teks";
 
 export default async function HalamanAdmin() {
   // Penjaga utama. Kalau pengguna bukan Admin, fungsi ini mengarahkan ke
@@ -59,6 +61,12 @@ export default async function HalamanAdmin() {
             <li>
               <Link href="/admin/laporan" className="text-sm underline">
                 {teksLaporan.tautanLaporan}
+              </Link>
+            </li>
+
+            <li>
+              <Link href="/admin/log" className="text-sm underline">
+                {teksLog.tautanLog}
               </Link>
             </li>
           </ul>
