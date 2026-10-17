@@ -3,7 +3,8 @@
 // Halaman ini masih sederhana: judul peran, nama akun, tombol keluar, dan daftar
 // halaman Admin. Halaman-halaman Admin dibangun satu per satu di fase ini:
 //   - Menu dan resep: /admin/menu (sudah ada).
-//   - Stok: belum ada (dibuat di tugas berikutnya), jadi belum bisa dibuka.
+//   - Stok: /admin/stok (sudah ada).
+//   - Laporan dan Riwayat: /admin/laporan (sudah ada).
 //
 // Yang tetap dari tugas sebelumnya (tugas 2.7):
 //   1. Penjagaan akses di sisi server lewat wajibPeran("/admin"). Wajib, karena
@@ -24,6 +25,7 @@ import PanelPeran from "@/components/panel-peran";
 import { wajibPeran } from "@/lib/auth/session";
 import { teksMenuAdmin } from "@/features/admin/menu/teks";
 import { teksStokAdmin } from "@/features/admin/stok/teks";
+import { teksLaporan } from "@/features/laporan/teks";
 
 export default async function HalamanAdmin() {
   // Penjaga utama. Kalau pengguna bukan Admin, fungsi ini mengarahkan ke
@@ -51,6 +53,12 @@ export default async function HalamanAdmin() {
             <li>
               <Link href="/admin/stok" className="text-sm underline">
                 {teksStokAdmin.stok}
+              </Link>
+            </li>
+
+            <li>
+              <Link href="/admin/laporan" className="text-sm underline">
+                {teksLaporan.tautanLaporan}
               </Link>
             </li>
           </ul>

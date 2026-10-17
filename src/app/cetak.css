@@ -1,0 +1,158 @@
+/*
+ * File ini: gaya khusus saat halaman Laporan DICETAK (window.print() atau Ctrl+P).
+ *
+ * File ini sengaja terpisah dari globals.css supaya gaya cetak mudah dilacak, dan
+ * mudah diganti di Fase 7. Tidak ada library untuk cetak: semuanya CSS biasa dengan
+ * aturan @media print. File ini diimpor di src/app/layout.tsx, setelah globals.css.
+ *
+ * TUJUAN GAYA CETAK INI:
+ *   1. Yang tercetak HANYA isi laporan. Navigasi, tombol Keluar, tombol Cetak, dan
+ *      pesan status tidak ikut tercetak (kelas cetak-sembunyi).
+ *   2. Judul cetak dan waktu pencetakan hanya muncul di kertas (kelas cetak-hanya).
+ *   3. Kertas putih dan teks hitam, supaya laporan tetap terbaca saat difoto dengan
+ *      HP dan tidak bergantung pada warna layar.
+ *   4. Huruf tidak terlalu kecil, karena laporan ini dibaca sambil menghitung uang.
+ *   5. Kotak Ringkasan dan kotak Pencocokan uang tidak boleh terpotong di tengah
+ *      halaman (kelas cetak-tetap), karena keduanya adalah satu kesimpulan.
+ *   6. Tabel Daftar order boleh berlanjut ke halaman kertas berikutnya, dengan baris
+ *      judul tabel yang diulang di setiap halaman (kelas cetak-ulang-judul).
+ *
+ * CARA MEMAKAI KELASNYA: kelasnya ditulis langsung di komponen tampilan
+ * (src/components/laporan/), jadi penggantian tampilan di Fase 7 cukup menyentuh
+ * komponennya tanpa mengubah file ini.
+ */
+
+/* ---------------------------------------------------------------------------
+   Yang berlaku di layar (bukan hanya saat cetak)
+   --------------------------------------------------------------------------- */
+
+/*
+ * cetak-hanya: tidak terlihat di layar, terlihat di kertas.
+ *
+ * Ini yang membuat judul "Theodore Coffee - Laporan ..." dan waktu pencetakan
+ * hanya muncul di hasil cetak, bukan di layar biasa.
+ */
+.cetak-hanya {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Saat mencetak
+   --------------------------------------------------------------------------- */
+
+@media print {
+  /* Navigasi, tombol Keluar, tombol Cetak, dan pesan status: hilang. */
+  .cetak-sembunyi {
+    display: none !important;
+  }
+
+  /* Judul cetak dan waktu pencetakan: muncul. */
+  .cetak-hanya {
+    display: block !important;
+  }
+
+  /*
+   * Warna kertas dan tulisan.
+   *
+   * print-color-adjust dipakai supaya beberapa browser (terutama Safari di iPhone)
+   * benar-benar mencetak warna latar, bukan mengubahnya jadi abu-abu. Latar
+   * sengaja dipasang putih supaya penghemat tinta tidak mengotori tabel.
+   */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /*
+   * Huruf tidak terlalu kecil.
+   *
+   * Ukuran dasar dinaikkan supaya laporan tetap terbaca setelah difoto. Class
+   * huruf kecil ikut dinaikkan, karena kalau tidak, bagian yang paling penting
+   * (jam, catatan, alasan pembatalan) justru menjadi yang paling kecil.
+   */
+  body {
+    font-size: 11pt;
+  }
+
+  .text-xs {
+    font-size: 9.5pt !important;
+  }
+
+  .text-sm {
+    font-size: 10pt !important;
+  }
+
+  .text-base {
+    font-size: 11pt !important;
+  }
+
+  .text-lg,
+  .text-xl,
+  .text-2xl {
+    font-size: 13pt !important;
+  }
+
+  /*
+   * Warna tulisan dimuat dari class abu-abu dan merah di layar. Di kertas
+   * semuanya jadi hitam, karena Cetak hitam-putih tidak bisa membedakan abu-abu
+   * terang dari hitam.
+   */
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600,
+  .text-gray-700,
+  .text-red-700,
+  .text-amber-700,
+  .text-amber-800 {
+    color: #000000 !important;
+  }
+
+  /*
+   * Baris judul tabel diulang di setiap halaman.
+   *
+   * thead diberi display: table-header-group supaya browser mengulangnya saat
+   * tabel berlanjut ke halaman berikutnya. Tabel Daftar order sengaja dibiarkan
+   * panjang: memotongnya justru membuat nomor antrean tidak lengkap, sedangkan
+   * laporan boleh beberapa halaman.
+   */
+  .cetak-ulang-judul {
+    display: table-header-group !important;
+  }
+
+  /*
+   * Satu baris tabel tidak boleh terbelah jadi dua halaman.
+   *
+   * page-break-inside (nama lama) ditulis bersama break-inside karena beberapa
+   * peramban masih membaca yang nama lama.
+   */
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /*
+   * Kotak Ringkasan dan Pencocokan uang: satu kesimpulan tidak boleh terpisah.
+   *
+   * Kalau dua angka Pencocokan uang terpisah ke dua halaman kertas, mustahil
+   * dibandingkan, dan itu justru tujuan utama kotak itu.
+   */
+  .cetak-tetap {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /*
+   * Judul cetak dan waktu pencetakan.
+   *
+   * Dicetak sebagai blok di atas laporan, dengan garis bawah supaya mudah
+   * dicari saat tumpukan kertas dilipat.
+   */
+  .cetak-hanya {
+    border-bottom: 1px solid #000000;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+}

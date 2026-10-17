@@ -30,14 +30,43 @@ export type AppRole = z.infer<typeof AppRoleSchema>;
 //   - /barista hanya boleh dibuka Barista. Pemisahan ini wajib karena layar
 //     Barista sengaja berbeda dari layar Cashier.
 //   - /admin hanya boleh dibuka Admin (kelola menu, stok, akun, dan log).
+//   - Halaman Laporan mengikuti halaman induknya. Ada dua pintu masuk yang
+//     memakai komponen yang sama (/cashier/laporan dan /admin/laporan), dan tiap
+//     pintu masuk punya aturan sendiri sesuai halaman induknya. Barista tidak
+//     boleh membuka keduanya (docs/pemissions.md bagian 2: laporan hanya untuk
+//     Cashier dan Admin).
+//
+// CATATAN TENTANG ENTRI BERKURUNG SIKU "[id]": itu bukan alamat sungguhan, tapi
+// placeholder yang mewakili semua halaman detail laporan. Halaman detail memanggil
+// wajibPeran() dengan path yang memuat placeholder itu (bukan id laporan yang
+// berubah tiap laporan), supaya aturannya hanya perlu ditulis sekali untuk semua
+// laporan.
 const halamanPerlPeran: Record<string, readonly AppRole[]> = {
   "/cashier": ["cashier", "admin"],
   "/barista": ["barista"],
   "/admin": ["admin"],
+  "/cashier/laporan": ["cashier", "admin"],
+  "/cashier/laporan/[id]": ["cashier", "admin"],
+  "/admin/laporan": ["admin"],
+  "/admin/laporan/[id]": ["admin"],
 };
 
 // Daftar seluruh halaman peran yang dilindungi.
-export const HALAMAN_PERAN = ["/cashier", "/barista", "/admin"] as const;
+//
+// CATATAN: daftar ini dipakai dua pihak. src/proxy.ts memakainya untuk
+// mengarahkan pengguna yang belum login (dan di sana pencocokannya memakai awalan
+// path, jadi /cashier/laporan ikut terlindungi), dan peranBolehBukaPath
+// memakainya untuk menolak peran yang salah. Karena itu SETIAP halaman laporan
+// harus ada di sini, supaya tidak ada halaman laporan yang lolos tanpa penjaga.
+export const HALAMAN_PERAN = [
+  "/cashier",
+  "/barista",
+  "/admin",
+  "/cashier/laporan",
+  "/cashier/laporan/[id]",
+  "/admin/laporan",
+  "/admin/laporan/[id]",
+] as const;
 
 /**
  * Menentukan halaman tujuan setelah login untuk sebuah peran.

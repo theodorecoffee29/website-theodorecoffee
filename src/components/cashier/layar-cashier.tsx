@@ -7,12 +7,14 @@
 // Tampilan sengaja POLOS dan sementara (sampai Fase 7): HTML semantik dengan
 // class Tailwind seperlunya, tanpa komponen jadi, tanpa ikon, tanpa animasi.
 
+import Link from "next/link";
 import { KartuPesanan } from "./kartu-pesanan";
 import { DialogBatal } from "./dialog-batal";
 import { FormOrderManual } from "./form-order-manual";
 import { DialogRingkas } from "./dialog-ringkas";
 import { PanelSisaStok } from "@/components/stok/panel-sisa-stok";
 import { teksCashier } from "@/features/cashier/teks";
+import { teksLaporan } from "@/features/laporan/teks";
 import type {
   KeadaanCashier,
   PesananTampil,
@@ -81,6 +83,14 @@ export function LayarCashier({
             {teksCashier.tombol.keluar}
           </button>
         </header>
+
+        {/* Tautan ke halaman Laporan. Cashier perlu ini untuk melihat total
+            penjualan dan mencocokkan uang di akhir acara (docs/prd.md bagian 8). */}
+        <nav className="border-b border-gray-200 pb-3">
+          <Link href="/cashier/laporan" className="text-sm underline">
+            {teksLaporan.tautanLaporan}
+          </Link>
+        </nav>
 
         {/* Spanduk pesanan baru. Tanpa suara, hanya teks (docs/prd.md bagian 5:
             notifikasi suara di luar V1). */}

@@ -8,6 +8,9 @@
 //   - /cashier boleh dibuka Cashier dan Admin (Admin acting as cadangan).
 //   - /barista hanya Barista.
 //   - /admin hanya Admin.
+//   - Halaman Laporan mengikuti halaman induknya: /cashier/laporan untuk Cashier
+//     dan Admin, /admin/laporan hanya Admin. Barista tidak boleh melihat laporan
+//     karena laporan berisi omzet.
 
 import { describe, expect, it } from "vitest";
 import { HALAMAN_PERAN, pathUntukRole, peranBolehBukaPath } from "./roles";
@@ -23,15 +26,29 @@ const hakAkses: Record<
   { boleh: string[]; tidakBoleh: string[] }
 > = {
   cashier: {
-    boleh: ["/cashier"],
-    tidakBoleh: ["/barista", "/admin"],
+    boleh: ["/cashier", "/cashier/laporan", "/cashier/laporan/[id]"],
+    tidakBoleh: ["/barista", "/admin", "/admin/laporan", "/admin/laporan/[id]"],
   },
   barista: {
     boleh: ["/barista"],
-    tidakBoleh: ["/cashier", "/admin"],
+    tidakBoleh: [
+      "/cashier",
+      "/admin",
+      "/cashier/laporan",
+      "/cashier/laporan/[id]",
+      "/admin/laporan",
+      "/admin/laporan/[id]",
+    ],
   },
   admin: {
-    boleh: ["/admin", "/cashier"],
+    boleh: [
+      "/admin",
+      "/cashier",
+      "/cashier/laporan",
+      "/cashier/laporan/[id]",
+      "/admin/laporan",
+      "/admin/laporan/[id]",
+    ],
     tidakBoleh: ["/barista"],
   },
 };
@@ -62,8 +79,8 @@ describe("peranBolehBukaPath", () => {
   });
 
   it("memeriksa seluruh kombinasi peran dan halaman peran", () => {
-    // Yang diuji di sini: seluruh kombinasi peran x halaman peran, yaitu 9.
-    // Dihitung manual supaya kita yakin semua kombinasi benar-benar diperiksa.
+    // Yang diuji di sini: seluruh kombinasi peran x halaman peran. Dihitung
+    // manual supaya kita yakin semua kombinasi benar-benar diperiksa.
     let jumlahDiperiksa = 0;
 
     for (const role of semuaPeran) {
@@ -74,8 +91,8 @@ describe("peranBolehBukaPath", () => {
       }
     }
 
-    // 3 peran x 3 halaman = 9 kombinasi.
-    expect(jumlahDiperiksa).toBe(9);
+    // 3 peran x 7 halaman (3 halaman peran + 4 halaman laporan) = 21 kombinasi.
+    expect(jumlahDiperiksa).toBe(21);
   });
 
   it("hanya Admin yang boleh membuka /cashier sebagai cadangan", () => {
@@ -89,6 +106,30 @@ describe("peranBolehBukaPath", () => {
     expect(peranBolehBukaPath("admin", "/admin")).toBe(true);
     expect(peranBolehBukaPath("cashier", "/admin")).toBe(false);
     expect(peranBolehBukaPath("barista", "/admin")).toBe(false);
+  });
+
+  it("Cashier dan Admin boleh membuka halaman laporan Cashier", () => {
+    // Laporan hanya untuk Cashier dan Admin (docs/pemissions.md bagian 2).
+    // Admin boleh karena dia cadangan Cashier.
+    expect(peranBolehBukaPath("cashier", "/cashier/laporan")).toBe(true);
+    expect(peranBolehBukaPath("admin", "/cashier/laporan")).toBe(true);
+    expect(peranBolehBukaPath("barista", "/cashier/laporan")).toBe(false);
+
+    // Detail laporan memakai aturan yang sama.
+    expect(peranBolehBukaPath("cashier", "/cashier/laporan/[id]")).toBe(true);
+    expect(peranBolehBukaPath("admin", "/cashier/laporan/[id]")).toBe(true);
+    expect(peranBolehBukaPath("barista", "/cashier/laporan/[id]")).toBe(false);
+  });
+
+  it("hanya Admin yang boleh membuka halaman laporan Admin", () => {
+    expect(peranBolehBukaPath("admin", "/admin/laporan")).toBe(true);
+    expect(peranBolehBukaPath("cashier", "/admin/laporan")).toBe(false);
+    expect(peranBolehBukaPath("barista", "/admin/laporan")).toBe(false);
+
+    // Detail laporan memakai aturan yang sama.
+    expect(peranBolehBukaPath("admin", "/admin/laporan/[id]")).toBe(true);
+    expect(peranBolehBukaPath("cashier", "/admin/laporan/[id]")).toBe(false);
+    expect(peranBolehBukaPath("barista", "/admin/laporan/[id]")).toBe(false);
   });
 
   it("hanya Barista yang boleh membuka /barista", () => {

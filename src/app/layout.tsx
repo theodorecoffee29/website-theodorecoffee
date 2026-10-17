@@ -4,6 +4,10 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+// Gaya khusus pencetakan laporan (@media print). Diimpor setelah globals.css
+// supaya aturan cetaknya berlaku di atas gaya umum. Isinya hanya aturan cetak, jadi
+// halaman lain tidak terpengaruh.
+import "./cetak.css";
 
 // Metadata yang dibaca browser dan mesin pencari untuk semua halaman.
 export const metadata: Metadata = {
