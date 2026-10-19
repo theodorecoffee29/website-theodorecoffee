@@ -38,6 +38,8 @@ export type AppRole = z.infer<typeof AppRoleSchema>;
 //   - /admin/log hanya boleh dibuka Admin, karena isinya memuat detail teknis
 //     kegagalan dan jejak siapa yang melakukan apa (docs/pemissions.md bagian 2:
 //     hanya Admin yang boleh membaca log).
+//   - /admin/akun hanya boleh dibuka Admin, karena hanya Admin yang boleh mengelola akun
+//     Cashier dan Barista (docs/pemissions.md bagian 2).
 //
 // CATATAN TENTANG ENTRI BERKURUNG SIKU "[id]": itu bukan alamat sungguhan, tapi
 // placeholder yang mewakili semua halaman detail laporan. Halaman detail memanggil
@@ -53,6 +55,7 @@ const halamanPerlPeran: Record<string, readonly AppRole[]> = {
   "/admin/laporan": ["admin"],
   "/admin/laporan/[id]": ["admin"],
   "/admin/log": ["admin"],
+  "/admin/akun": ["admin"],
 };
 
 // Daftar seluruh halaman peran yang dilindungi.
@@ -60,8 +63,9 @@ const halamanPerlPeran: Record<string, readonly AppRole[]> = {
 // CATATAN: daftar ini dipakai dua pihak. src/proxy.ts memakainya untuk
 // mengarahkan pengguna yang belum login (dan di sana pencocokannya memakai awalan
 // path, jadi /cashier/laporan ikut terlindungi), dan peranBolehBukaPath
-// memakainya untuk menolak peran yang salah. Karena itu SETIAP halaman laporan dan
-// halaman log harus ada di sini, supaya tidak ada halaman yang lolos tanpa penjaga.
+// memakainya untuk menolak peran yang salah. Karena itu SETIAP halaman laporan,
+// halaman log, dan halaman akun harus ada di sini, supaya tidak ada halaman yang
+// lolos tanpa penjaga.
 export const HALAMAN_PERAN = [
   "/cashier",
   "/barista",
@@ -71,6 +75,7 @@ export const HALAMAN_PERAN = [
   "/admin/laporan",
   "/admin/laporan/[id]",
   "/admin/log",
+  "/admin/akun",
 ] as const;
 
 /**

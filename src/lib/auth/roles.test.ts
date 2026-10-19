@@ -13,6 +13,8 @@
 //     karena laporan berisi omzet.
 //   - /admin/log hanya Admin, karena isinya memuat detail teknis kegagalan dan
 //     jejak siapa yang melakukan apa.
+//   - /admin/akun hanya Admin, karena hanya Admin yang boleh mengelola akun
+//     Cashier dan Barista.
 
 import { describe, expect, it } from "vitest";
 import { HALAMAN_PERAN, pathUntukRole, peranBolehBukaPath } from "./roles";
@@ -35,6 +37,7 @@ const hakAkses: Record<
       "/admin/laporan",
       "/admin/laporan/[id]",
       "/admin/log",
+      "/admin/akun",
     ],
   },
   barista: {
@@ -47,6 +50,7 @@ const hakAkses: Record<
       "/admin/laporan",
       "/admin/laporan/[id]",
       "/admin/log",
+      "/admin/akun",
     ],
   },
   admin: {
@@ -58,6 +62,7 @@ const hakAkses: Record<
       "/admin/laporan",
       "/admin/laporan/[id]",
       "/admin/log",
+      "/admin/akun",
     ],
     tidakBoleh: ["/barista"],
   },
@@ -101,9 +106,9 @@ describe("peranBolehBukaPath", () => {
       }
     }
 
-    // 3 peran x 8 halaman (3 halaman peran + 4 halaman laporan + 1 halaman log)
-    // = 24 kombinasi.
-    expect(jumlahDiperiksa).toBe(24);
+    // 3 peran x 9 halaman (3 halaman peran + 4 halaman laporan + 1 halaman log
+    // + 1 halaman kelola akun) = 27 kombinasi.
+    expect(jumlahDiperiksa).toBe(27);
   });
 
   it("hanya Admin yang boleh membuka /cashier sebagai cadangan", () => {
