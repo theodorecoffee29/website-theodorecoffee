@@ -48,3 +48,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ---------------------------------------------------------------------------
+# File lokal yang tidak boleh masuk repo (ditulis eksplisit supaya jelas
+# terbaca, walaupun sebagian sudah tercakup aturan .env* di atas)
+# ---------------------------------------------------------------------------
+# File environment lokal: berisi kunci rahasia.
+.env.local
+.env*.local
+
+# Folder sementara hasil kerja Supabase CLI (link, cache unduhan).
+supabase/.temp
