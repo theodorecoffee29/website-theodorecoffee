@@ -14,6 +14,7 @@
 // database).
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { panggilFungsiAdmin } from "@/lib/server/panggil-fungsi-admin";
 import { balasGagal, balasOk, balasValidasiGagal } from "@/lib/server/balas";
@@ -72,6 +73,9 @@ export async function GET(_request: NextRequest) {
  * terisi sejak awal.
  */
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Admin.
   const jaga = await jagaPeranAdmin("buat bahan");
   if (!jaga.diizinkan) {

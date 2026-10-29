@@ -46,7 +46,14 @@ export async function createSupabaseServerClient() {
         setAll(cookiesToSet) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, {
+               ...options,
+               httpOnly: true,
+               sameSite: "lax",
+               path: "/",
+               secure: process.env.NODE_ENV === "production",
+               maxAge: 12 * 60 * 60,
+             });
             }
           } catch {
             // Server Component tidak bisa menulis cookie. Ini sudah diharapkan,

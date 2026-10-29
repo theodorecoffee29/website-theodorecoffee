@@ -13,6 +13,7 @@
 // bukan 409.
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { getAdminClient } from "@/lib/supabase/admin";
 import {
   balasDariErrorDatabase,
@@ -39,6 +40,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Cashier dan Admin.
   const jaga = await jagaPeranStaf(["cashier", "admin"], "konfirmasi order");
   if (!jaga.diizinkan) {

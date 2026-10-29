@@ -28,11 +28,15 @@ import {
 } from "@/lib/server/pembatas-permintaan";
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
 import { logErrorBrowserSchema } from "@/lib/server/validasi";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { logError, redactSecrets } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Pembatas permintaan. Ketat, karena ini bukan aksi bisnis dan tidak boleh
   //    dipakai untuk membanjiri tabel error_logs.
   const cekBatas = periksaPembatas(

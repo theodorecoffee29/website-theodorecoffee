@@ -12,6 +12,7 @@
 // CATATAN SOAL PASSWORD: file ini tidak menyentuh password sama sekali. input maupun output di file ini memuatnya.
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { getAdminClient } from "@/lib/supabase/admin";
 import {
   balasAkunDariErrorDatabase,
@@ -38,6 +39,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Admin.
   const jaga = await jagaPeranAdmin("ubah akun");
   if (!jaga.diizinkan) {

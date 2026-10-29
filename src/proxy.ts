@@ -62,7 +62,7 @@ export async function proxy(request: NextRequest) {
         // memanggil setAll ini hanya ketika token benar-benar perlu disegarkan.
         supabaseResponse = NextResponse.next({ request });
         for (const { name, value, options } of cookiesToSet) {
-          supabaseResponse.cookies.set(name, value, options);
+          supabaseResponse.cookies.set(name, value, { ...options, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 12 * 60 * 60 });
         }
       },
     },

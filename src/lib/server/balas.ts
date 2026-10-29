@@ -22,6 +22,8 @@ import { logError } from "@/lib/log";
 // Diekspor karena endpoint laporan memakai pemetaan yang sama persis (lihat
 // src/lib/server/balas-laporan.ts). Menuliskannya dua kali berisiko membuat
 // keduanya berbeda nanti.
+export const HEADER_NO_STORE = { "Cache-Control": "no-store" } as const;
+
 export const STATUS_HTTP: Record<ErrorType, number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
@@ -40,7 +42,7 @@ export const STATUS_HTTP: Record<ErrorType, number> = {
  * Output: objek NextResponse berisi { ok: true, data }.
  */
 export function balasOk(data: unknown, status = 200): NextResponse {
-  return NextResponse.json(ok(data), { status });
+  return NextResponse.json(ok(data), { status, headers: HEADER_NO_STORE });
 }
 
 /**
@@ -54,7 +56,7 @@ export function balasOk(data: unknown, status = 200): NextResponse {
  */
 export function balasGagal(error: AppError, status?: number): NextResponse {
   const statusAkhir = status ?? STATUS_HTTP[error.type];
-  return NextResponse.json(fail(error), { status: statusAkhir });
+  return NextResponse.json(fail(error), { status: statusAkhir, headers: HEADER_NO_STORE });
 }
 
 /**

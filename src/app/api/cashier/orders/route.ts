@@ -27,6 +27,7 @@ import {
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
 import { orderManualSchema } from "@/lib/server/validasi";
 import { petakanOrderManual } from "@/lib/server/petakan-hasil-fungsi";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { wibToday } from "@/lib/server/wib-hari-ini";
 
 export const dynamic = "force-dynamic";
@@ -124,6 +125,9 @@ export async function GET(_request: NextRequest) {
  *         atau { ok: false, error }.
  */
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Cashier dan Admin. Belum login -> UNAUTHENTICATED;
   //    peran lain (mis. Barista) -> FORBIDDEN + access.denied dicatat.
   const jaga = await jagaPeranStaf(["cashier", "admin"], "order manual");

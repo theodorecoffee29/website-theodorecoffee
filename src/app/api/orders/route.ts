@@ -19,6 +19,7 @@ import {
   balasValidasiGagal,
 } from "@/lib/server/balas";
 import { buatOrderSchema } from "@/lib/server/validasi";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { petakanHasilBuatOrder } from "@/lib/server/petakan-hasil-fungsi";
 import {
   periksaPembatas,
@@ -30,6 +31,9 @@ import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Pembatas permintaan per IP. Batasnya ketat karena membuat order adalah
   //    aksi yang bisa dipakai untuk membanjiri server dengan order palsu.
   const cekBatas = periksaPembatas(

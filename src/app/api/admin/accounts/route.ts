@@ -24,6 +24,7 @@
 // lewat server.
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { logError } from "@/lib/log";
 import { getAdminClient } from "@/lib/supabase/admin";
 import {
@@ -120,6 +121,9 @@ export async function GET() {
  * Output: { ok: true, data: { account: {...} } } atau { ok: false, error }.
  */
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Admin.
   const jaga = await jagaPeranAdmin("buat akun");
   if (!jaga.diizinkan) {

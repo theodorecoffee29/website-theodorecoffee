@@ -21,8 +21,7 @@ import { STATUS_HTTP, balasErrorDatabase } from "./balas";
 //   no-cache, must-   : kalau ada yang tetap menyimpannya, jangan memakainya
 //   revalidate          tanpa bertanya dulu ke server.
 export const HEADER_LAPORAN: Record<string, string> = {
-  "Cache-Control": "no-store, no-cache, must-revalidate",
-  Pragma: "no-cache",
+  "Cache-Control": "no-store",
 };
 
 /**

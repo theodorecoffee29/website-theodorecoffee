@@ -14,6 +14,7 @@
 // fungsi database sebagai pengaman kedua.
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { panggilFungsiAdmin } from "@/lib/server/panggil-fungsi-admin";
 import { balasGagal, balasOk, balasValidasiGagal } from "@/lib/server/balas";
 import { balasDariErrorAdmin } from "@/lib/server/balas-admin";
@@ -34,6 +35,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran: hanya Admin.
   const jaga = await jagaPeranAdmin("ubah resep");
   if (!jaga.diizinkan) {

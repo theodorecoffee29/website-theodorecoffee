@@ -27,6 +27,7 @@
 //   pun (docs/logging.md bagian 6 poin 4).
 
 import type { NextRequest } from "next/server";
+import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
 import { balasLaporanGagal, balasLaporanOk } from "@/lib/server/balas-laporan";
 import { logActivity, logError } from "@/lib/log";
 import { jagaPeranStaf, metaSesi } from "@/lib/server/jaga-peran";
@@ -51,6 +52,9 @@ const PERAN_LAPORAN = ["cashier", "admin"] as const;
  *         teks yang wajar.
  */
 export async function POST(request: NextRequest) {
+  const tolakUkuran = periksaUkuranBody(request);
+  if (tolakUkuran) return tolakUkuran;
+
   // 1. Penjagaan peran.
   const jaga = await jagaPeranStaf([...PERAN_LAPORAN], NAMA_ENDPOINT);
   if (!jaga.diizinkan) {
