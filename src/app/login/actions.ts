@@ -23,6 +23,10 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { batasiPermintaan, ambilIpKlien, buatKunci } from "@/lib/server/pembatas";
+import { BATAS_PERMINTAAN } from "@/lib/server/batas-permintaan";
+import { logActivity } from "@/lib/log";
 import { ambilSesiStaf } from "@/lib/auth/session";
 import { pathUntukRole } from "@/lib/auth/roles";
 import {
@@ -82,6 +86,37 @@ export async function loginAction(formData: FormData): Promise<HasilLogin> {
 
   const email = hasilValidasi.data.email;
   const password = hasilValidasi.data.password;
+
+  const headerList = await headers();
+  const ip = ambilIpKlien(headerList);
+  const kunciIp = await buatKunci("login:ip", ip);
+  const hasilIp = await batasiPermintaan({
+    kunci: kunciIp,
+    batas: BATAS_PERMINTAAN.loginPerIp.batas,
+    jendelaDetik: BATAS_PERMINTAAN.loginPerIp.jendelaDetik,
+  });
+  const kunciEmail = await buatKunci("login:email", email);
+  const hasilEmail = await batasiPermintaan({
+    kunci: kunciEmail,
+    batas: BATAS_PERMINTAAN.loginPerEmail.batas,
+    jendelaDetik: BATAS_PERMINTAAN.loginPerEmail.jendelaDetik,
+  });
+
+  if (!hasilIp.diizinkan || !hasilEmail.diizinkan) {
+    // Jangan bocorkan email mentah. Catat dengan potongan hash kunci.
+    logActivity({
+      action: "auth.login_failed",
+      actorRole: "system",
+      actorId: null,
+      entityType: "auth",
+      entityId: null,
+      meta: {
+        reason: "rate_limited",
+        key: kunciEmail.slice(0, 12),
+      },
+    });
+    return { error: "Terlalu banyak permintaan, coba lagi beberapa saat." };
+  }
 
   const supabase = await createSupabaseServerClient();
 

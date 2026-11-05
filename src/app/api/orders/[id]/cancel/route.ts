@@ -25,6 +25,8 @@ import {
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
 import { petakanHasilBatal } from "@/lib/server/petakan-hasil-fungsi";
 import { apakahUuidValid } from "@/lib/uuid";
+import { batasiPermintaan, ambilIpKlien, buatKunci } from "@/lib/server/pembatas";
+import { BATAS_PERMINTAAN } from "@/lib/server/batas-permintaan";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,22 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const ip = ambilIpKlien(request.headers);
+  const kunciIp = await buatKunci("cancel:ip", ip);
+  const hasilIp = await batasiPermintaan({
+    kunci: kunciIp,
+    batas: BATAS_PERMINTAAN.cancelPerIp.batas,
+    jendelaDetik: BATAS_PERMINTAAN.cancelPerIp.jendelaDetik,
+  });
+  if (!hasilIp.diizinkan) {
+    const respons = balasGagal(
+      { type: "RATE_LIMITED", message: "Terlalu banyak permintaan, coba lagi beberapa saat" },
+      429,
+    );
+    respons.headers.set("Retry-After", String(hasilIp.cobaLagiDetik));
+    return respons;
+  }
+
   // Pembatas permintaan per IP.
   const cekBatas = periksaPembatas(
     "batalkan-order:" + ambilIpPemanggil(request),
@@ -55,6 +73,21 @@ export async function POST(
   }
 
   const { id } = await params;
+
+  const kunciOrder = await buatKunci("cancel:order", id);
+  const hasilOrder = await batasiPermintaan({
+    kunci: kunciOrder,
+    batas: BATAS_PERMINTAAN.cancelPerOrder.batas,
+    jendelaDetik: BATAS_PERMINTAAN.cancelPerOrder.jendelaDetik,
+  });
+  if (!hasilOrder.diizinkan) {
+    const respons = balasGagal(
+      { type: "RATE_LIMITED", message: "Terlalu banyak permintaan, coba lagi beberapa saat" },
+      429,
+    );
+    respons.headers.set("Retry-After", String(hasilOrder.cobaLagiDetik));
+    return respons;
+  }
 
   // Id yang bukan uuid ditolak sebelum menyentuh database (bukan kegagalan
   // sistem, jadi tidak dicatat di error_logs).

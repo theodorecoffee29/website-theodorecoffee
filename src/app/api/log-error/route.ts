@@ -29,6 +29,8 @@ import {
 import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
 import { logErrorBrowserSchema } from "@/lib/server/validasi";
 import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
+import { batasiPermintaan, ambilIpKlien, buatKunci } from "@/lib/server/pembatas";
+import { BATAS_PERMINTAAN } from "@/lib/server/batas-permintaan";
 import { logError, redactSecrets } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +38,22 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const tolakUkuran = periksaUkuranBody(request);
   if (tolakUkuran) return tolakUkuran;
+
+  const ip = ambilIpKlien(request.headers);
+  const kunciIp = await buatKunci("log-error:ip", ip);
+  const hasilIp = await batasiPermintaan({
+    kunci: kunciIp,
+    batas: BATAS_PERMINTAAN.logErrorPerIp.batas,
+    jendelaDetik: BATAS_PERMINTAAN.logErrorPerIp.jendelaDetik,
+  });
+  if (!hasilIp.diizinkan) {
+    const respons = balasGagal(
+      { type: "RATE_LIMITED", message: "Terlalu banyak permintaan, coba lagi beberapa saat" },
+      429,
+    );
+    respons.headers.set("Retry-After", String(hasilIp.cobaLagiDetik));
+    return respons;
+  }
 
   // 1. Pembatas permintaan. Ketat, karena ini bukan aksi bisnis dan tidak boleh
   //    dipakai untuk membanjiri tabel error_logs.

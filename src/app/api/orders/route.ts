@@ -20,6 +20,8 @@ import {
 } from "@/lib/server/balas";
 import { buatOrderSchema } from "@/lib/server/validasi";
 import { periksaUkuranBody } from "@/lib/server/periksa-ukuran-body";
+import { batasiPermintaan, ambilIpKlien, buatKunci } from "@/lib/server/pembatas";
+import { BATAS_PERMINTAAN } from "@/lib/server/batas-permintaan";
 import { petakanHasilBuatOrder } from "@/lib/server/petakan-hasil-fungsi";
 import {
   periksaPembatas,
@@ -31,6 +33,37 @@ import { ambilIpPemanggil } from "@/lib/server/ambil-ip";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const ip = ambilIpKlien(request.headers);
+  const kunciIp = await buatKunci("orders:ip", ip);
+  const hasilIp = await batasiPermintaan({
+    kunci: kunciIp,
+    batas: BATAS_PERMINTAAN.ordersPerIp.batas,
+    jendelaDetik: BATAS_PERMINTAAN.ordersPerIp.jendelaDetik,
+  });
+  if (!hasilIp.diizinkan) {
+    const respons = balasGagal(
+      { type: "RATE_LIMITED", message: "Terlalu banyak permintaan, coba lagi beberapa saat" },
+      429,
+    );
+    respons.headers.set("Retry-After", String(hasilIp.cobaLagiDetik));
+    return respons;
+  }
+  // global
+  const kunciGlobal = "orders:global";
+  const hasilGlobal = await batasiPermintaan({
+    kunci: kunciGlobal,
+    batas: BATAS_PERMINTAAN.ordersGlobal.batas,
+    jendelaDetik: BATAS_PERMINTAAN.ordersGlobal.jendelaDetik,
+  });
+  if (!hasilGlobal.diizinkan) {
+    const respons = balasGagal(
+      { type: "RATE_LIMITED", message: "Terlalu banyak permintaan, coba lagi beberapa saat" },
+      429,
+    );
+    respons.headers.set("Retry-After", String(hasilGlobal.cobaLagiDetik));
+    return respons;
+  }
+
   const tolakUkuran = periksaUkuranBody(request);
   if (tolakUkuran) return tolakUkuran;
 
